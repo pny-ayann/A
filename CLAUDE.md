@@ -24,6 +24,18 @@
 - 확인 질문은 꼭 필요할 때만. 상식적인 기본값으로 진행하고, 무엇을 골랐는지 알려준다.
 - 실수를 줄이기 위해 만든 것은 스스로 실행·검사(타입 검사, 테스트)한 뒤 보고한다. 확인 못 한 것은 솔직히 말한다.
 
+## 스킬 사용 순서
+- superpowers와 Matt Pocock skills가 겹치면 **superpowers를 먼저** 쓴다.
+  - 테스트 먼저: `superpowers:test-driven-development` (mattpocock `tdd` 대신)
+  - 버그 찾기: `superpowers:systematic-debugging` (mattpocock `diagnosing-bugs` 대신)
+  - 코드 검사: `superpowers:requesting-code-review` (mattpocock `code-review` 대신)
+- 겹치지 않는 Matt Pocock 스킬(`grill-me`, `handoff`, `wait-what`, `prototype` 등)은 그대로 쓴다.
+- 작은 일(설정 변경, 한두 줄 수정)은 brainstorming·계획 단계를 건너뛴다. 질문은 꼭 필요할 때만.
+
+## 답하는 형식
+- 사용자가 고르거나 답해야 할 때는 **버튼(선택지)** 으로 묻는다. 사용자가 같은 말을 다시 타이핑하지 않게 한다.
+- 사용자가 입력해야 할 명령이나 문장은 **코드 블록**에 넣어 복사 버튼으로 바로 복사할 수 있게 한다.
+
 ## 금지/주의
 - 비밀 키·비밀번호(.env)는 절대 GitHub에 올리지 않는다.
 - 커밋·푸시는 사용자가 요청할 때만 한다.
