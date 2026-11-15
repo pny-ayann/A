@@ -1,0 +1,47 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git branch*)",
+      "Bash(git remote -v)",
+      "Bash(git ls-remote*)",
+      "Bash(gh auth status*)",
+      "Bash(gh repo view*)",
+      "Bash(gh pr view*)",
+      "Bash(gh pr list*)",
+      "Bash(ls*)",
+      "Bash(node -v)",
+      "Bash(node --version)",
+      "Bash(npm -v)",
+      "Bash(npm --version)",
+      "Bash(npm install*)",
+      "Bash(npm ci*)",
+      "Bash(npm test*)",
+      "Bash(npm run lint*)",
+      "Bash(npm run typecheck*)",
+      "Bash(npm run test*)",
+      "Bash(npx tsc*)",
+      "Bash(npx expo*)",
+      "Bash(npx jest*)",
+      "PowerShell(git status*)",
+      "PowerShell(git diff*)",
+      "PowerShell(git log*)",
+      "PowerShell(node -v)",
+      "PowerShell(npm -v)",
+      "PowerShell(npm install*)",
+      "PowerShell(npm test*)",
+      "PowerShell(npm run lint*)",
+      "PowerShell(npm run typecheck*)",
+      "PowerShell(npx tsc*)",
+      "PowerShell(npx expo*)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(**/.env)",
+      "Read(**/.env.*)"
+    ]
+  }
+}
