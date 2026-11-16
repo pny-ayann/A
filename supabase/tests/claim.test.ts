@@ -167,3 +167,12 @@ describe('동시 보유 제한', () => {
     expect(r.rows[0]).toEqual({ c: [] });
   });
 });
+
+test('driver_conflicts는 코드 배열을 정확히 돌려준다', async () => {
+  const o = await seedOrder(w.db, w.A);
+  const r = await seedOrder(w.db, w.A, { reserved_at: new Date(Date.now() + 10 * 60000).toISOString() });
+  await claim(w.d, r);
+  await w.db.query(`update orders set status='assigned', driver_id=$2 where id=$1`, [o, w.d]);
+  const c = await w.db.query('select driver_conflicts($1, null) c', [w.d]);
+  expect(c.rows[0]).toEqual({ c: ['HAS_ACTIVE_ORDER', 'RESERVATION_CONFLICT'] });
+});

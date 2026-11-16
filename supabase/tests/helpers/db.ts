@@ -49,7 +49,9 @@ export async function expectError(p: Promise<unknown>, code: string): Promise<vo
   }
   if (!err) throw new Error(`expected error containing "${code}" but call succeeded`);
   const msg = (err as Error).message ?? String(err);
-  if (!msg.includes(code)) throw new Error(`expected error containing "${code}" but got: ${msg}`);
+  // 우리 오류 코드(대문자)는 메시지 전체가 정확히 그 코드여야 한다
+  const ok = /^[A-Z_]+$/.test(code) ? msg === code : msg.includes(code);
+  if (!ok) throw new Error(`expected error "${code}" but got: ${msg}`);
 }
 
 export type UserOpts = {

@@ -23,13 +23,13 @@ begin
     if exists (select 1 from public.orders where driver_id = p_driver_id
                and status in ('assigned', 'arrived_pickup', 'driving')
                and id is distinct from p_exclude_order and reserved_at is null) then
-      v_out := v_out || 'HAS_ACTIVE_ORDER';
+      v_out := array_append(v_out, 'HAS_ACTIVE_ORDER');
     end if;
     if exists (select 1 from public.orders where driver_id = p_driver_id
                and status in ('assigned', 'arrived_pickup', 'driving')
                and id is distinct from p_exclude_order and reserved_at is not null
                and abs(extract(epoch from reserved_at - now())) < extract(epoch from v_gap)) then
-      v_out := v_out || 'RESERVATION_CONFLICT';
+      v_out := array_append(v_out, 'RESERVATION_CONFLICT');
     end if;
   else
     if exists (select 1 from public.orders where driver_id = p_driver_id
@@ -40,7 +40,7 @@ begin
                select 1 from public.orders where driver_id = p_driver_id
                and status in ('assigned', 'arrived_pickup', 'driving')
                and id is distinct from p_exclude_order and reserved_at is null)) then
-      v_out := v_out || 'RESERVATION_CONFLICT';
+      v_out := array_append(v_out, 'RESERVATION_CONFLICT');
     end if;
   end if;
   return v_out;
