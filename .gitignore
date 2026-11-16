@@ -13,3 +13,5 @@ supabase/.temp/
 coverage/
 .superpowers/
 !.env*.example
+.next/
+*.tsbuildinfo
