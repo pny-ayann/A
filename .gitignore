@@ -9,3 +9,6 @@ Thumbs.db
 .idea/
 .vscode/
 graphify-out/
+supabase/.temp/
+coverage/
+.superpowers/
