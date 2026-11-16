@@ -31,7 +31,18 @@ async function ensureUser(loginId: string, meta: Record<string, unknown>): Promi
   const r = await admin.auth.admin.createUser({
     email: email(loginId), password, email_confirm: true, app_metadata: meta,
   });
-  if (r.error && !/already/i.test(r.error.message)) throw r.error;
+  if (!r.error) return;
+  if (!/already/i.test(r.error.message)) throw r.error;
+  // 이미 있는 계정: 역할 정보를 한 번 지웠다가 다시 써서 프로필을 확실히 맞춘다 (개발용)
+  const list = await admin.auth.admin.listUsers({ perPage: 1000 });
+  if (list.error) throw list.error;
+  const u = list.data.users.find(x => x.email === email(loginId));
+  if (!u) throw new Error(`${loginId} 계정을 찾지 못했어요.`);
+  const { role: _r, company_id: _c, staff_level: _s, driver_status: _d, ...rest } = u.app_metadata ?? {};
+  const clear = await admin.auth.admin.updateUserById(u.id, { app_metadata: { ...rest, role: null, company_id: null, staff_level: null, driver_status: null } });
+  if (clear.error) throw clear.error;
+  const set = await admin.auth.admin.updateUserById(u.id, { app_metadata: meta });
+  if (set.error) throw set.error;
 }
 
 async function main() {

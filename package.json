@@ -9,7 +9,7 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc -p packages/shared --noEmit && tsc -p supabase/tests --noEmit",
-    "db:push": "supabase db push",
+    "db:push": "supabase db push --remote",
     "seed:dev": "node --env-file=apps/admin/.env.local supabase/seed-dev.ts",
     "check:dev": "node --env-file=apps/admin/.env.local supabase/check-dev.ts"
   },

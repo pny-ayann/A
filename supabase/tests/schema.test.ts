@@ -41,3 +41,23 @@ test('기본값 오더가 만들어진다', async () => {
   const r = (await db.query('select status, kind, dispatch_mode, fare from orders where id=$1', [o])).rows[0];
   expect(r).toEqual({ status: 'open', kind: 'takson', dispatch_mode: 'open', fare: 50000 });
 });
+
+test('Supabase처럼 계정을 먼저 만들고 역할을 나중에 써 넣어도 프로필이 맞춰진다', async () => {
+  const db = await createDb();
+  const c = await seedCompany(db);
+  const r = await db.query<{ id: string }>(
+    `insert into auth.users(email, raw_app_meta_data) values ('late1@takson.local', '{"provider":"email"}') returning id`);
+  const id = r.rows[0]!.id;
+  await db.query(`update auth.users set raw_app_meta_data = raw_app_meta_data || $2::jsonb where id = $1`,
+    [id, JSON.stringify({ role: 'customer', company_id: c, name: '늦은고객', phone: '010-1' })]);
+  const p = (await db.query('select role, company_id, name, driver_status from profiles where id=$1', [id])).rows[0];
+  expect(p).toEqual({ role: 'customer', company_id: c, name: '늦은고객', driver_status: null });
+});
+
+test('역할과 상관없는 app_metadata 변경은 프로필을 건드리지 않는다', async () => {
+  const db = await createDb();
+  const id = await createUser(db, { loginId: 'drv9', role: 'driver', driverStatus: 'active' });
+  await db.query(`update auth.users set raw_app_meta_data = raw_app_meta_data || '{"providers":["email"]}' where id = $1`, [id]);
+  const p = (await db.query('select driver_status from profiles where id=$1', [id])).rows[0];
+  expect(p).toEqual({ driver_status: 'active' });
+});
