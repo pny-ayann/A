@@ -23,7 +23,7 @@ create table auth.users (
 
 create function auth.uid() returns uuid
 language sql stable as $$
-  select nullif(current_setting('request.jwt.claims', true)::json->>'sub', '')::uuid
+  select nullif(nullif(current_setting('request.jwt.claims', true), '')::json->>'sub', '')::uuid
 $$;
 grant execute on function auth.uid() to anon, authenticated, service_role;
 
