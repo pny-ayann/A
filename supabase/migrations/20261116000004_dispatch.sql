@@ -101,3 +101,85 @@ begin
   where id = p_order_id and status = 'open' and dispatch_mode = 'open';
   if not found then raise exception 'ALREADY_TAKEN'; end if;
 end $$;
+
+-- 반납 ------------------------------------------------------------------------
+create function public.release_order(p_order_id uuid, p_reason text) returns void
+language plpgsql security definer set search_path = public as $$
+declare
+  v_order public.orders%rowtype;
+  v_window int;
+begin
+  select * into v_order from public.orders where id = p_order_id and driver_id = auth.uid() for update;
+  if not found then raise exception 'NOT_FOUND'; end if;
+  if v_order.status not in ('assigned', 'arrived_pickup') then raise exception 'INVALID_TRANSITION'; end if;
+  select case when v_order.kind = 'daeri' then release_min_daeri else release_min_takson end
+    into v_window from public.settings where id = 1;
+  if now() - v_order.assigned_at > make_interval(mins => v_window) then
+    raise exception 'RELEASE_WINDOW_PASSED';
+  end if;
+
+  perform public.set_rpc_context(p_reason, null, null);
+  update public.orders set status = 'open', driver_id = null, assigned_at = null where id = p_order_id;
+  insert into public.order_events(order_id, actor_id, type, reason)
+  values (p_order_id, auth.uid(), 'released', p_reason);
+end $$;
+
+-- 사진 --------------------------------------------------------------------------
+create function public.missing_photos(p_order_id uuid, p_phase text) returns text[]
+language sql stable security definer set search_path = public as $$
+  select coalesce(array_agg(s order by ord), '{}')
+  from unnest(array['front', 'back', 'left', 'right', 'dashboard']) with ordinality as t(s, ord)
+  where not exists (
+    select 1 from public.order_photos p where p.order_id = p_order_id and p.phase = p_phase and p.slot = t.s
+  )
+$$;
+
+-- 지금 오더 상태에서 이 단계 사진을 올릴 수 있는지 (배정 기사 기준)
+create function public.photo_phase_open(p_order_id uuid, p_phase text) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from public.orders o
+    where o.id = p_order_id and o.driver_id = auth.uid()
+      and case p_phase
+            when 'pickup' then o.status in ('assigned', 'arrived_pickup')
+            when 'dropoff' then o.status = 'driving'
+            when 'extra' then o.status in ('assigned', 'arrived_pickup', 'driving')
+            else false
+          end
+  )
+$$;
+
+alter table public.order_photos enable row level security;
+create policy order_photos_select on public.order_photos for select using (public.can_read_order(order_id));
+create policy order_photos_write on public.order_photos for all
+  using (public.is_staff() or public.photo_phase_open(order_id, phase))
+  with check (public.is_staff() or public.photo_phase_open(order_id, phase));
+
+-- 진행 단계 -------------------------------------------------------------------------
+create function public.advance_order(p_order_id uuid, p_lat double precision default null,
+                                     p_lng double precision default null)
+returns text
+language plpgsql security definer set search_path = public as $$
+declare
+  v_status text;
+  v_next text;
+begin
+  select status into v_status from public.orders where id = p_order_id and driver_id = auth.uid() for update;
+  if not found then raise exception 'NOT_FOUND'; end if;
+  v_next := case v_status
+    when 'assigned' then 'arrived_pickup'
+    when 'arrived_pickup' then 'driving'
+    when 'driving' then 'completed'
+  end;
+  if v_next is null then raise exception 'INVALID_TRANSITION'; end if;
+  if v_next = 'driving' and cardinality(public.missing_photos(p_order_id, 'pickup')) > 0 then
+    raise exception 'PHOTOS_REQUIRED';
+  end if;
+  if v_next = 'completed' and cardinality(public.missing_photos(p_order_id, 'dropoff')) > 0 then
+    raise exception 'PHOTOS_REQUIRED';
+  end if;
+
+  perform public.set_rpc_context(null, p_lat, p_lng);
+  update public.orders set status = v_next where id = p_order_id;
+  return v_next;
+end $$;
