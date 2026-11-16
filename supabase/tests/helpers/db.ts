@@ -125,3 +125,18 @@ export async function seedPhotos(
       [orderId, phase, s, `${orderId}/${phase}/${s}.jpg`]);
   }
 }
+
+/** 업체 A, B / 고객 a(A), b(B) / 관리자 admin / 일반 관제 op / 승인된 기사 d, d2 / 대기 중 기사 dp */
+export async function createWorld() {
+  const db = await createDb();
+  const A = await seedCompany(db, { name: '상사A' });
+  const B = await seedCompany(db, { name: '상사B' });
+  const a = await createUser(db, { loginId: 'cust_a', role: 'customer', companyId: A });
+  const b = await createUser(db, { loginId: 'cust_b', role: 'customer', companyId: B });
+  const admin = await createUser(db, { loginId: 'admin1', role: 'staff', staffLevel: 'admin' });
+  const op = await createUser(db, { loginId: 'op1', role: 'staff', staffLevel: 'operator' });
+  const d = await createUser(db, { loginId: 'driver1', role: 'driver', driverStatus: 'active', name: '김기사' });
+  const d2 = await createUser(db, { loginId: 'driver2', role: 'driver', driverStatus: 'active', name: '박기사' });
+  const dp = await createUser(db, { loginId: 'driver3', role: 'driver', driverStatus: 'pending' });
+  return { db, A, B, a, b, admin, op, d, d2, dp };
+}
