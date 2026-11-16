@@ -12,3 +12,4 @@ graphify-out/
 supabase/.temp/
 coverage/
 .superpowers/
+!.env*.example

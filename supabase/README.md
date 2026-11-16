@@ -13,11 +13,16 @@
 
 ## 2. 규칙(마이그레이션) 넣기
 
-`supabase/migrations` 폴더의 파일 9개를 **번호 순서대로** 넣어요.
+**쉬운 방법 (명령어)**: 터미널에서 `npx supabase login`을 한 번 하고 나면 Claude가
+`npx supabase link`와 `npm run db:push`로 한꺼번에 넣어 줄 수 있어요.
+그다음 `npm run seed:dev`로 개발용 계정(dev_admin, dev_op, dev_cust_a, dev_cust_b, dev_driver1, dev_driver2),
+업체, 요금표, 미션을 만들고, `npm run check:dev`로 권한 규칙이 실제 서버에서 동작하는지 확인해요.
+
+**직접 하는 방법 (SQL 편집기)**: `supabase/migrations` 폴더의 파일을 **번호 순서대로** 넣어요.
 
 1. 왼쪽 메뉴 **SQL Editor** → **New query**
 2. `20261116000001_schema.sql` 내용을 전부 복사해서 붙여 넣고 **Run**
-3. 성공하면 다음 파일(`...0002`, `...0003`, ... 마지막 `...0009`까지)도 같은 방법으로 하나씩 실행해요.
+3. 성공하면 다음 파일(`...0002`, `...0003`, ... 마지막 파일까지)도 같은 방법으로 하나씩 실행해요.
 4. 중간에 빨간 오류가 나면 거기서 멈추고 오류 문구를 Claude에게 보여 주세요.
 
 ## 3. 첫 관리자 계정 만들기

@@ -52,3 +52,6 @@ language sql immutable as $$
   select (string_to_array(name, '/'))[1:array_length(string_to_array(name, '/'), 1) - 1]
 $$;
 grant execute on function storage.foldername(text) to anon, authenticated, service_role;
+
+-- 실제 Supabase에는 이미 있는 실시간 발행
+create publication supabase_realtime;
