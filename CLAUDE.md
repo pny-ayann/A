@@ -11,10 +11,15 @@
 
 공통 기능: 회원가입/로그인, 지도/위치, 결제, 알림/메시지.
 
-## 기술 방향 (아직 확정 전 — 바꿀 땐 사용자에게 먼저 설명)
-- 앱: React Native + Expo (TypeScript). 세 앱이 코드·타입을 공유하도록 한 저장소에서 관리.
-- 서버/실시간/로그인: Supabase 무료 요금제 우선 (대안: Firebase).
-- 지도: 카카오맵 API. 알림: Expo 푸시. 결제: 토스페이먼츠(테스트 모드부터).
+## 기술 방향 (2026-11-16 확정 — 바꿀 땐 사용자에게 먼저 설명)
+- 설계 문서: `docs/superpowers/specs/2026-11-16-1단계-오더흐름-design.md`
+- 기사용·고객용: React Native + Expo (TypeScript) 휴대폰 앱. **안드로이드 먼저**, 아이폰은 같은 코드로 나중에.
+- 관제용: **웹** (Next.js, TypeScript), PC 화면 기준.
+- 세 앱이 코드·타입을 공유하도록 한 저장소에서 관리.
+- 서버/실시간/로그인/사진: Supabase 무료 요금제 우선. 사진은 압축해서 무료 용량 안에서 운영.
+- 지도: 카카오맵 API. 알림: Expo 푸시.
+- 결제: 현금·후불만. 앱 내 카드 결제(토스페이먼츠)는 1단계 제외.
+- 단계: 1단계 오더 흐름 → 2단계 정산.
 - GitHub 저장소: https://github.com/pny-ayann/A (브랜치 main)
 
 ## 사용자와 일하는 방식
@@ -39,3 +44,17 @@
 ## 금지/주의
 - 비밀 키·비밀번호(.env)는 절대 GitHub에 올리지 않는다.
 - 커밋·푸시는 사용자가 요청할 때만 한다.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues for `pny-ayann/A` (via the `gh` CLI). See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default five-role vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `GLOSSARY.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
