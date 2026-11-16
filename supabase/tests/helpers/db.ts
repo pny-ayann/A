@@ -63,6 +63,65 @@ export type UserOpts = {
   selfSignup?: boolean;
 };
 
-export async function createUser(_db: PGlite, _o: UserOpts): Promise<string> {
-  throw new Error('Task 3');
+let seq = 0;
+const next = () => ++seq;
+
+/** auth.users에 행을 넣어 프로필을 만들고 user id를 돌려준다. */
+export async function createUser(db: PGlite, o: UserOpts): Promise<string> {
+  const email = `${o.loginId}@takson.local`;
+  const meta = {
+    role: o.role ?? 'driver',
+    company_id: o.companyId ?? null,
+    staff_level: o.staffLevel ?? null,
+    name: o.name ?? o.loginId,
+    phone: o.phone ?? `010-0000-${String(next()).padStart(4, '0')}`,
+  };
+  const app = o.selfSignup ? {} : meta;
+  const user = o.selfSignup ? meta : { name: meta.name, phone: meta.phone };
+  const r = await db.query<{ id: string }>(
+    'insert into auth.users(email, raw_app_meta_data, raw_user_meta_data) values ($1, $2, $3) returning id',
+    [email, JSON.stringify(app), JSON.stringify(user)]);
+  const id = r.rows[0]!.id;
+  if (o.driverStatus) await db.query('update profiles set driver_status=$2 where id=$1', [id, o.driverStatus]);
+  return id;
+}
+
+export async function seedCompany(
+  db: PGlite,
+  o: { name?: string; defaultPayment?: 'cash' | 'postpaid'; fuelBilling?: 'customer' | 'company' } = {},
+): Promise<string> {
+  const r = await db.query<{ id: string }>(
+    'insert into companies(name, default_payment, fuel_billing) values ($1, $2, $3) returning id',
+    [o.name ?? `상사${next()}`, o.defaultPayment ?? 'postpaid', o.fuelBilling ?? 'customer']);
+  return r.rows[0]!.id;
+}
+
+export const ORDER_DEFAULTS = {
+  kind: 'takson', status: 'open', dispatch_mode: 'open', payment_method: 'postpaid', fare: 50000,
+  pickup_address: '서울 중구 세종대로 110', pickup_area: '중구 태평로1가', pickup_lat: 37.5665, pickup_lng: 126.978,
+  pickup_contact_name: '김출발', pickup_contact_phone: '010-1111-1111',
+  dropoff_address: '서울 강남구 강남대로 396', dropoff_area: '강남구 역삼동', dropoff_lat: 37.4979, dropoff_lng: 127.0276,
+  dropoff_contact_name: '이도착', dropoff_contact_phone: '010-2222-2222',
+  vehicle_number: '12가3456', vehicle_model: '쏘나타',
+};
+
+/** 슈퍼유저로 오더를 넣는다. o의 키는 orders 컬럼 이름. */
+export async function seedOrder(db: PGlite, companyId: string, o: Record<string, unknown> = {}): Promise<string> {
+  const row: Record<string, unknown> = { ...ORDER_DEFAULTS, ...o, company_id: companyId };
+  const cols = Object.keys(row);
+  const r = await db.query<{ id: string }>(
+    `insert into orders(${cols.join(',')}) values (${cols.map((_, i) => `$${i + 1}`).join(',')}) returning id`,
+    cols.map(c => row[c]));
+  return r.rows[0]!.id;
+}
+
+export const SLOTS = ['front', 'back', 'left', 'right', 'dashboard'];
+
+export async function seedPhotos(
+  db: PGlite, orderId: string, phase: 'pickup' | 'dropoff', slots: string[] = SLOTS,
+): Promise<void> {
+  for (const s of slots) {
+    await db.query('insert into order_photos(order_id, phase, slot, path) values ($1, $2, $3, $4)',
+      [orderId, phase, s, `${orderId}/${phase}/${s}.jpg`]);
+  }
 }
