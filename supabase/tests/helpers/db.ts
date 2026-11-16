@@ -123,8 +123,10 @@ export async function seedPhotos(
   db: PGlite, orderId: string, phase: 'pickup' | 'dropoff', slots: string[] = SLOTS,
 ): Promise<void> {
   for (const s of slots) {
+    const path = `${orderId}/${phase}/${s}.jpg`;
+    await db.query(`insert into storage.objects(bucket_id, name) values ('order-photos', $1)`, [path]);
     await db.query('insert into order_photos(order_id, phase, slot, path) values ($1, $2, $3, $4)',
-      [orderId, phase, s, `${orderId}/${phase}/${s}.jpg`]);
+      [orderId, phase, s, path]);
   }
 }
 

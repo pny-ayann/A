@@ -103,7 +103,11 @@ describe('진행 단계와 사진', () => {
 
   test('배정 기사는 출발 사진을 직접 올리고 5장이면 운행 시작', async () => {
     const o = await held({ status: 'arrived_pickup' });
-    for (const s of SLOTS) await insertPhoto(w.d, o, 'pickup', s);
+    for (const s of SLOTS) {
+      // 실제 앱처럼 파일을 먼저 올리고 사진 행을 넣는다
+      await as(w.db, w.d, tx => tx.query(`insert into storage.objects(bucket_id, name) values ('order-photos', $1)`, [`${o}/pickup/${s}.jpg`]));
+      await insertPhoto(w.d, o, 'pickup', s);
+    }
     expect(await advance(w.d, o)).toBe('driving');
   });
 
