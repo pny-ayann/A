@@ -1,0 +1,25 @@
+const messages: Record<string, string> = {
+  ALREADY_TAKEN: '이미 다른 기사가 잡은 오더예요.',
+  NOT_OPEN: '지금은 잡을 수 없는 오더예요.',
+  DRIVER_NOT_ACTIVE: '승인된 기사만 오더를 잡을 수 있어요.',
+  HAS_ACTIVE_ORDER: '진행 중인 일반 오더를 먼저 끝내 주세요.',
+  RESERVATION_CONFLICT: '다른 예약과 시간이 너무 가까워요.',
+  RELEASE_WINDOW_PASSED: '반납 가능 시간이 지났어요. 관제에 문의해 주세요.',
+  PHOTOS_REQUIRED: '필수 사진 5장을 모두 올려 주세요.',
+  INVALID_TRANSITION: '지금 상태에서는 할 수 없는 작업이에요.',
+  REASON_REQUIRED: '사유를 입력해 주세요.',
+  INVALID_AMENDMENT: '도착지 변경, 경유지 추가, 미션 추가일 때만 바꿀 수 있어요.',
+  CANCEL_NOT_ALLOWED: '배차된 오더는 관제에 문의해서 취소해 주세요.',
+  FORBIDDEN: '권한이 없어요.',
+  NOT_FOUND: '오더를 찾을 수 없어요.',
+  INVALID_LOGIN_ID: '아이디는 영문 소문자, 숫자, _ 로 3~20자예요.',
+};
+
+const fallback = '처리하지 못했어요. 잠시 후 다시 시도해 주세요.';
+
+/** 서버 오류 코드(또는 코드가 들어 있는 오류 문장)를 한국어 문구로 바꾼다. */
+export function errorMessage(codeOrMessage: string): string {
+  const tokens = codeOrMessage.split(/[^A-Z_]+/);
+  const code = tokens.find(t => t in messages);
+  return code ? messages[code]! : fallback;
+}
