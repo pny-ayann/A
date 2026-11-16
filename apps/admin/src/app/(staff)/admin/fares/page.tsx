@@ -13,7 +13,7 @@ export default async function FaresPage() {
       <section>
         <h1 className="mb-1 text-xl font-bold">거리별 기본 요금</h1>
         <p className="mb-4 text-sm text-slate-600">
-          거리가 &quot;최대 거리&quot; 이하이면 그 요금이 붙어요. 가장 먼 구간보다 멀면 오더 접수 때 요금을 직접 넣어요.
+          거리가 &quot;최대 거리&quot; 이하이면 그 요금이 붙어요. 가장 먼 구간보다 멀면 가장 먼 구간 요금이 붙어요. 접수 때 요금은 직접 고칠 수 있어요.
         </p>
         <FareBandEditor initial={(bands.data ?? []).map(b => ({ max_km: Number(b.max_km), fare: b.fare }))} />
       </section>
