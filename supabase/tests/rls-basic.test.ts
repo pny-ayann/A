@@ -67,8 +67,8 @@ test('고객은 자기 업체 주소를 등록하고 고정할 수 있다', asyn
 
 test('audit_log는 관리자만 본다', async () => {
   await w.db.query(`insert into audit_log(table_name, action) values ('x', 'UPDATE')`);
-  expect((await as(w.db, w.op, tx => tx.query('select id from audit_log'))).rows).toHaveLength(0);
-  expect((await as(w.db, w.admin, tx => tx.query('select id from audit_log'))).rows).toHaveLength(1);
+  expect((await as(w.db, w.op, tx => tx.query(`select id from audit_log where table_name='x'`))).rows).toHaveLength(0);
+  expect((await as(w.db, w.admin, tx => tx.query(`select id from audit_log where table_name='x'`))).rows).toHaveLength(1);
 });
 
 test('기사는 자기 서류를 올리고 남의 서류는 못 본다', async () => {
