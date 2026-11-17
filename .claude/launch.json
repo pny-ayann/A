@@ -4,8 +4,27 @@
     {
       "name": "admin",
       "runtimeExecutable": "npm.cmd",
-      "runtimeArgs": ["run", "dev", "-w", "@takson/admin"],
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "-w",
+        "@takson/admin"
+      ],
       "port": 3000
+    },
+    {
+      "name": "driver-web",
+      "runtimeExecutable": "npm.cmd",
+      "runtimeArgs": [
+        "run",
+        "web",
+        "-w",
+        "@takson/driver",
+        "--",
+        "--port",
+        "8081"
+      ],
+      "port": 8081
     }
   ]
 }
