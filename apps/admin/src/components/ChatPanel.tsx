@@ -62,9 +62,11 @@ export function ChatPanel({ orderId, myId }: { orderId: string; myId: string }) 
 
   // 보고 있는 탭은 읽음 처리 (새 메시지가 와도 다시)
   useEffect(() => {
+    const readAt = readMark(lastTime ? [lastTime] : []);
+    if (!readAt) return; // 아직 메시지가 없으면 기록하지 않는다
     let alive = true;
     void browserClient().from('thread_reads')
-      .upsert({ order_id: orderId, thread, user_id: myId, read_at: readMark(lastTime ? [lastTime] : [], new Date()) })
+      .upsert({ order_id: orderId, thread, user_id: myId, read_at: readAt })
       .then(() => { if (alive) window.dispatchEvent(new Event(UNREAD_CHANGED)); });
     return () => { alive = false; };
   }, [orderId, thread, myId, lastTime]);

@@ -31,3 +31,10 @@ test('경로 분류', () => {
   expect(routeAccess('/orders/abc')).toBe('staff');
   expect(routeAccess('/')).toBe('staff');
 });
+
+test('일반 관제도 기사·업체 목록은 볼 수 있다 (설계 8.5: 기사와 업체 조회), 수정은 서버 액션이 관리자만 허용', () => {
+  expect(routeAccess('/admin/drivers')).toBe('staff');
+  expect(routeAccess('/admin/companies')).toBe('staff');
+  expect(routeAccess('/admin/staff')).toBe('admin');
+  expect(routeAccess('/admin/audit')).toBe('admin');
+});

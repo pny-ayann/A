@@ -17,10 +17,12 @@ function toLocalInput(iso: string | null): string {
 }
 
 /** 상태·기사 말고 모든 항목 수정 */
-export function OrderEditForm({ orderId, initial, companies }: {
-  orderId: string; initial: OrderForm; companies: { id: string; name: string }[];
+export function OrderEditForm({ orderId, initial, updatedAt, companies }: {
+  orderId: string; initial: OrderForm; updatedAt: string; companies: { id: string; name: string }[];
 }) {
   const router = useRouter();
+  // 화면을 열 때(또는 내가 저장했을 때) 기준. 새로고침으로 바뀐 initial이 아니라 이걸과 비교해야 남의 변경을 덮지 않는다
+  const [base, setBase] = useState({ form: initial, updatedAt });
   const [f, setF] = useState(initial);
   const [reserveLocal, setReserveLocal] = useState(toLocalInput(initial.reservedAt));
   const [fareText, setFareText] = useState(initial.fare === null ? '' : String(initial.fare));
@@ -29,20 +31,20 @@ export function OrderEditForm({ orderId, initial, companies }: {
 
   const patch = (p: Partial<OrderForm>) => setF(cur => ({ ...cur, ...p }));
   const patchPlace = (key: 'pickup' | 'dropoff', p: Partial<Place>) => setF(cur => ({ ...cur, [key]: { ...cur[key], ...p } }));
-  const moved = (['pickup', 'dropoff'] as const).some(k => f[k].lat !== initial[k].lat || f[k].lng !== initial[k].lng);
+  const moved = (['pickup', 'dropoff'] as const).some(k => f[k].lat !== base.form[k].lat || f[k].lng !== base.form[k].lng);
 
   function submit() {
     // 예약 칸을 안 건드렸으면 원래 값(초 단위까지)을 그대로 보낸다
-    const reservedAt = reserveLocal === toLocalInput(initial.reservedAt)
-      ? initial.reservedAt
+    const reservedAt = reserveLocal === toLocalInput(base.form.reservedAt)
+      ? base.form.reservedAt
       : reserveLocal ? new Date(reserveLocal).toISOString() : null;
     const fare = fareText.trim() === '' ? null : Number(fareText.replaceAll(',', ''));
     // 주소가 바뀌면 예전 거리는 맞지 않으니 비운다
     const form: OrderForm = { ...f, reservedAt, fare, distanceKm: moved ? null : f.distanceKm };
     start(async () => {
-      const r = await saveOrder(orderId, form, initial.reservedAt);
+      const r = await saveOrder(orderId, base.form, form, base.updatedAt);
       setResult(r);
-      if (r.ok) router.refresh();
+      if (r.ok && r.updatedAt) { setBase({ form, updatedAt: r.updatedAt }); router.refresh(); }
     });
   }
 

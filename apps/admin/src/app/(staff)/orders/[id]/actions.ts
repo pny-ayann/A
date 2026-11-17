@@ -1,8 +1,8 @@
 'use server';
 import { errorMessage, type OrderStatus } from '@takson/shared';
 import { revalidatePath } from 'next/cache';
-import { toOrderInsert, type OrderForm } from '@/lib/orders/form';
-import { CONFLICT_LABEL, validateOrderEdit } from '@/lib/orders/actions';
+import type { OrderForm } from '@/lib/orders/form';
+import { changedColumns, CONFLICT_LABEL, validateOrderEdit } from '@/lib/orders/actions';
 import { getStaffProfile, serverClient } from '@/lib/supabase/server';
 
 export type Result = { ok: boolean; message: string };
@@ -23,15 +23,22 @@ function done(orderId: string, message: string): Result {
   return { ok: true, message };
 }
 
-/** 상태·기사 말고 모든 항목 저장 (일반 update. 이력·감사 기록은 서버 트리거가 남긴다) */
-export async function saveOrder(orderId: string, form: OrderForm, originalReservedAt: string | null): Promise<Result> {
+/**
+ * 상태·기사 말고 모든 항목 저장 (일반 update. 이력·감사 기록은 서버 트리거가 남긴다).
+ * 바꾼 칸만 보내고, 화면을 연 뒤 다른 사람이 오더를 바꿨으면(updated_at이 다르면) 저장하지 않는다.
+ */
+export async function saveOrder(orderId: string, initial: OrderForm, form: OrderForm, loadedUpdatedAt: string): Promise<Result & { updatedAt?: string }> {
   const supabase = await staff();
   if (!supabase) return LOGIN_NEEDED;
-  const problem = validateOrderEdit(form, originalReservedAt, new Date());
+  const problem = validateOrderEdit(form, initial.reservedAt, new Date());
   if (problem) return { ok: false, message: problem };
-  const { error } = await supabase.from('orders').update(toOrderInsert(form)).eq('id', orderId);
+  const changes = changedColumns(initial, form);
+  if (Object.keys(changes).length === 0) return { ok: false, message: '바뀐 내용이 없어요.' };
+  const { data, error } = await supabase.from('orders').update(changes)
+    .eq('id', orderId).eq('updated_at', loadedUpdatedAt).select('updated_at');
   if (error) return { ok: false, message: errorMessage(error.message) };
-  return done(orderId, '저장했어요.');
+  if (!data?.length) return { ok: false, message: '화면을 연 뒤 다른 사람이 이 오더를 바꿨어요. 새로고침해서 최신 내용을 보고 다시 고쳐 주세요.' };
+  return { ...done(orderId, '저장했어요.'), updatedAt: data[0]!.updated_at as string };
 }
 
 export async function loadCandidates(orderId: string): Promise<{ ok: true; list: Candidate[] } | { ok: false; message: string }> {

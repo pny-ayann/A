@@ -1,6 +1,6 @@
 import { AccountFields, ActionForm, inputCls } from '@/components/ActionForm';
 import { issueAccount, saveCompany } from '@/lib/accounts/actions';
-import { serverClient } from '@/lib/supabase/server';
+import { getStaffProfile, serverClient } from '@/lib/supabase/server';
 
 type Company = { id: string; name: string; phone: string | null; default_payment: string; fuel_billing: string };
 
@@ -22,7 +22,12 @@ function CompanyFields({ c }: { c?: Company }) {
   );
 }
 
+const PAY_LABEL: Record<string, string> = { postpaid: '후불', cash: '현금' };
+const FUEL_LABEL: Record<string, string> = { customer: '주유비 고객 청구', company: '주유비 회사 부담' };
+
+/** 관리자는 고치고 발급한다. 일반 관제는 보기만 한다 (설계 8.5) */
 export default async function CompaniesPage() {
+  const isAdmin = (await getStaffProfile())?.staff_level === 'admin';
   const supabase = await serverClient();
   const [companies, staff] = await Promise.all([
     supabase.from('companies').select('id, name, phone, default_payment, fuel_billing').order('name'),
@@ -32,24 +37,26 @@ export default async function CompaniesPage() {
   return (
     <div className="max-w-5xl space-y-8">
       <section>
-        <h1 className="mb-4 text-xl font-bold">업체 관리</h1>
+        <h1 className="mb-4 text-xl font-bold">{isAdmin ? '업체 관리' : '업체 조회'}</h1>
         <div className="space-y-6">
           {list.map(c => {
             const people = (staff.data ?? []).filter(p => p.company_id === c.id);
             return (
               <div key={c.id} className="rounded border p-4">
-                <ActionForm action={saveCompany} submit="저장"><CompanyFields c={c} /></ActionForm>
+                {isAdmin
+                  ? <ActionForm action={saveCompany} submit="저장"><CompanyFields c={c} /></ActionForm>
+                  : <div className="text-sm"><b>{c.name}</b> · {c.phone ?? '전화 없음'} · {PAY_LABEL[c.default_payment] ?? c.default_payment} · {FUEL_LABEL[c.fuel_billing] ?? c.fuel_billing}</div>}
                 <div className="mt-3 text-sm">
                   <div className="mb-1 font-semibold">업체 직원 계정 {people.length}개</div>
                   {people.length === 0 && <p className="text-slate-500">아직 없어요.</p>}
                   <ul className="mb-2 space-y-0.5">
                     {people.map(p => <li key={p.id}>{p.name} · <span className="text-slate-500">{p.login_id}</span> · {p.phone}</li>)}
                   </ul>
-                  <ActionForm action={issueAccount} submit="직원 계정 발급">
+                  {isAdmin && <ActionForm action={issueAccount} submit="직원 계정 발급">
                     <input type="hidden" name="role" value="customer" />
                     <input type="hidden" name="companyId" value={c.id} />
                     <AccountFields />
-                  </ActionForm>
+                  </ActionForm>}
                 </div>
               </div>
             );
@@ -57,10 +64,12 @@ export default async function CompaniesPage() {
           {list.length === 0 && <p className="text-sm text-slate-500">등록된 업체가 없어요.</p>}
         </div>
       </section>
-      <section className="border-t pt-6">
-        <h2 className="mb-3 text-lg font-bold">새 업체 등록</h2>
-        <ActionForm action={saveCompany} submit="업체 등록" primary><CompanyFields /></ActionForm>
-      </section>
+      {isAdmin && (
+        <section className="border-t pt-6">
+          <h2 className="mb-3 text-lg font-bold">새 업체 등록</h2>
+          <ActionForm action={saveCompany} submit="업체 등록" primary><CompanyFields /></ActionForm>
+        </section>
+      )}
     </div>
   );
 }

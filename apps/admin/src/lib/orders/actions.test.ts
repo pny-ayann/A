@@ -84,3 +84,15 @@ test('수정에서도 필수 칸 검사', () => {
   const f = { ...rowToForm(dbRow), vehicleNumber: ' ' };
   expect(validateOrderEdit(f, dbRow.reserved_at, new Date('2026-11-17T05:00:00Z'))).toBe('차량번호를 입력해 주세요.');
 });
+
+import { changedColumns } from './actions';
+
+test('수정 저장은 바꾼 칸만 보낸다 (그사이 다른 사람이 바꾼 칸을 덮지 않게)', () => {
+  const before = rowToForm(dbRow);
+  const after = { ...before, driverMemo: '조심히', dropoff: { ...before.dropoff, detail: '3층' } };
+  expect(changedColumns(before, after)).toEqual({ dropoff_detail: '3층', driver_memo: '조심히' });
+});
+test('아무것도 안 바꾸면 빈 객체', () => {
+  const f = rowToForm(dbRow);
+  expect(changedColumns(f, { ...f })).toEqual({});
+});

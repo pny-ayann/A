@@ -1,5 +1,5 @@
 import { REQUIRED_SLOTS, type OrderKind, type OrderStatus, type PaymentMethod, type PhotoSlot, type Transmission } from '@takson/shared';
-import { validateOrderForm, type OrderForm, type Place } from './form';
+import { toOrderInsert, validateOrderForm, type OrderForm, type Place } from './form';
 import { STATUS_LABEL } from './labels';
 
 /** 필수 사진 칸 (서버 missing_photos와 같은 순서) */
@@ -108,4 +108,11 @@ const sameTime = (a: string | null, b: string | null) =>
 /** 수정 폼 검사. 예약 시간은 바꿨을 때만 '지났는지' 본다 */
 export function validateOrderEdit(f: OrderForm, originalReservedAt: string | null, now: Date): string | null {
   return validateOrderForm(f, sameTime(f.reservedAt, originalReservedAt) ? new Date(0) : now);
+}
+
+/** 수정 저장 때 보낼 칸: 처음 불러온 값과 달라진 orders 컬럼만 */
+export function changedColumns(before: OrderForm, after: OrderForm): Record<string, unknown> {
+  const a = toOrderInsert(before);
+  const b = toOrderInsert(after);
+  return Object.fromEntries(Object.entries(b).filter(([k, v]) => JSON.stringify(v) !== JSON.stringify(a[k])));
 }

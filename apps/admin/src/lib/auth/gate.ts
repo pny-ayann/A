@@ -4,9 +4,13 @@ export type GateResult =
   | { allow: true }
   | { allow: false; redirect: '/login' | '/orders'; signOut?: boolean; message?: string };
 
+const STAFF_READABLE = ['/admin/drivers', '/admin/companies'];
+
 /** 경로가 누구에게 열려 있는지 */
 export function routeAccess(path: string): Access {
   if (path === '/login' || path.startsWith('/login/')) return 'public';
+  // 기사·업체 목록은 일반 관제도 본다 (설계 8.5). 고치는 서버 액션은 관리자만 허용한다
+  if (STAFF_READABLE.some(p => path === p || path.startsWith(`${p}/`))) return 'staff';
   if (path === '/admin' || path.startsWith('/admin/')) return 'admin';
   return 'staff';
 }

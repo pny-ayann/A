@@ -88,7 +88,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       </div>
 
       <PhotoGrid photos={signedPhotos} receipts={signedReceipts} />
-      <OrderEditForm key={order.id} orderId={id} initial={rowToForm(order)} companies={companies.data ?? []} />
+      <OrderEditForm key={order.id} orderId={id} initial={rowToForm(order)} updatedAt={order.updated_at} companies={companies.data ?? []} />
       <EventTimeline events={timeline} />
     </div>
     <div className="xl:sticky xl:top-6 xl:self-start">
