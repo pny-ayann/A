@@ -13,11 +13,16 @@
 
 ## 2. 규칙(마이그레이션) 넣기
 
-`supabase/migrations` 폴더의 파일 9개를 **번호 순서대로** 넣어요.
+**쉬운 방법 (명령어)**: 터미널에서 `npx supabase login`을 한 번 하고 나면 Claude가
+`npx supabase link`와 `npm run db:push`로 한꺼번에 넣어 줄 수 있어요.
+그다음 `npm run seed:dev`로 개발용 계정(dev_admin, dev_op, dev_cust_a, dev_cust_b, dev_driver1, dev_driver2),
+업체, 요금표, 미션을 만들고, `npm run check:dev`로 권한 규칙이 실제 서버에서 동작하는지 확인해요.
+
+**직접 하는 방법 (SQL 편집기)**: `supabase/migrations` 폴더의 파일을 **번호 순서대로** 넣어요.
 
 1. 왼쪽 메뉴 **SQL Editor** → **New query**
 2. `20261116000001_schema.sql` 내용을 전부 복사해서 붙여 넣고 **Run**
-3. 성공하면 다음 파일(`...0002`, `...0003`, ... 마지막 `...0009`까지)도 같은 방법으로 하나씩 실행해요.
+3. 성공하면 다음 파일(`...0002`, `...0003`, ... 마지막 파일까지)도 같은 방법으로 하나씩 실행해요.
 4. 중간에 빨간 오류가 나면 거기서 멈추고 오류 문구를 Claude에게 보여 주세요.
 
 ## 3. 첫 관리자 계정 만들기
@@ -51,6 +56,31 @@ where login_id = 'boss';
 | Project URL | 앱, 관제 웹 | 공개돼도 괜찮아요 |
 | anon public key | 앱, 관제 웹 | 공개돼도 괜찮아요. 권한 규칙이 데이터를 지켜요 |
 | service_role key | 관제 웹 서버(계정 만들기)에만 | **절대 공개 금지.** GitHub, 앱, 채팅에 올리지 마세요 |
+
+## 5. 관제 웹 켜기
+
+1. `apps/admin/.env.local` 파일을 만들고 아래 이름으로 값을 넣어요. (이 파일은 GitHub에 올라가지 않아요)
+
+| 이름 | 값 |
+|---|---|
+| NEXT_PUBLIC_SUPABASE_URL | 4번의 Project URL |
+| NEXT_PUBLIC_SUPABASE_ANON_KEY | 4번의 anon public key |
+| SUPABASE_SERVICE_ROLE_KEY | 4번의 service_role key (계정 만들기에만 씀) |
+| NEXT_PUBLIC_KAKAO_JS_KEY | 카카오 개발자 사이트 → 앱 → 플랫폼 키 → JavaScript 키 (지도) |
+| KAKAO_REST_KEY | 같은 곳의 REST API 키 (주소 → 좌표, 거리 계산) |
+| DEV_PASSWORD | 개발용 계정 비밀번호 (`seed:dev`, `check:dev`, `dev:message`가 씀) |
+
+2. 카카오 개발자 사이트에서 두 가지를 켜요.
+   - **카카오맵** 사용 설정 (주소 검색·거리 계산에 필요)
+   - JavaScript 키의 **JavaScript SDK 도메인**에 `http://localhost:3000` (실제 주소로 올릴 땐 그 주소도) 추가 — 안 하면 지도가 안 떠요
+3. 저장소 루트에서 실행해요.
+
+```bash
+npm run dev -w @takson/admin
+```
+
+4. 브라우저에서 http://localhost:3000 을 열고 관리자 계정으로 로그인해요.
+5. 문의 화면 확인용으로 테스트 고객 메시지를 하나 보낼 수 있어요: `npm run dev:message -- "보낼 말"`
 
 ## 개발자용 메모
 

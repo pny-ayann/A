@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "admin",
+      "runtimeExecutable": "npm.cmd",
+      "runtimeArgs": ["run", "dev", "-w", "@takson/admin"],
+      "port": 3000
+    }
+  ]
+}

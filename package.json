@@ -8,11 +8,17 @@
   ],
   "scripts": {
     "test": "vitest run",
-    "typecheck": "tsc -p packages/shared --noEmit && tsc -p supabase/tests --noEmit"
+    "typecheck": "tsc -p packages/shared --noEmit && tsc -p supabase/tests --noEmit",
+    "db:push": "supabase db push --remote",
+    "seed:dev": "node --env-file=apps/admin/.env.local supabase/seed-dev.ts",
+    "check:dev": "node --env-file=apps/admin/.env.local supabase/check-dev.ts",
+    "dev:message": "node --env-file=apps/admin/.env.local supabase/dev-send-message.ts"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.16",
+    "@supabase/supabase-js": "^2.119.0",
     "@types/node": "^26.6.6",
+    "supabase": "^3.1.0",
     "typescript": "^7.0.2",
     "vitest": "^5.1.0"
   }
