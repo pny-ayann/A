@@ -57,6 +57,31 @@ where login_id = 'boss';
 | anon public key | 앱, 관제 웹 | 공개돼도 괜찮아요. 권한 규칙이 데이터를 지켜요 |
 | service_role key | 관제 웹 서버(계정 만들기)에만 | **절대 공개 금지.** GitHub, 앱, 채팅에 올리지 마세요 |
 
+## 5. 관제 웹 켜기
+
+1. `apps/admin/.env.local` 파일을 만들고 아래 이름으로 값을 넣어요. (이 파일은 GitHub에 올라가지 않아요)
+
+| 이름 | 값 |
+|---|---|
+| NEXT_PUBLIC_SUPABASE_URL | 4번의 Project URL |
+| NEXT_PUBLIC_SUPABASE_ANON_KEY | 4번의 anon public key |
+| SUPABASE_SERVICE_ROLE_KEY | 4번의 service_role key (계정 만들기에만 씀) |
+| NEXT_PUBLIC_KAKAO_JS_KEY | 카카오 개발자 사이트 → 앱 → 플랫폼 키 → JavaScript 키 (지도) |
+| KAKAO_REST_KEY | 같은 곳의 REST API 키 (주소 → 좌표, 거리 계산) |
+| DEV_PASSWORD | 개발용 계정 비밀번호 (`seed:dev`, `check:dev`, `dev:message`가 씀) |
+
+2. 카카오 개발자 사이트에서 두 가지를 켜요.
+   - **카카오맵** 사용 설정 (주소 검색·거리 계산에 필요)
+   - JavaScript 키의 **JavaScript SDK 도메인**에 `http://localhost:3000` (실제 주소로 올릴 땐 그 주소도) 추가 — 안 하면 지도가 안 떠요
+3. 저장소 루트에서 실행해요.
+
+```bash
+npm run dev -w @takson/admin
+```
+
+4. 브라우저에서 http://localhost:3000 을 열고 관리자 계정으로 로그인해요.
+5. 문의 화면 확인용으로 테스트 고객 메시지를 하나 보낼 수 있어요: `npm run dev:message -- "보낼 말"`
+
 ## 개발자용 메모
 
 - 테스트: 저장소 루트에서 `npm test`. Docker 없이 PGlite로 실제 마이그레이션을 돌려 검사해요.

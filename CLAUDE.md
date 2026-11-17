@@ -14,7 +14,7 @@
 ## 기술 방향 (2026-11-16 확정 — 바꿀 땐 사용자에게 먼저 설명)
 - 설계 문서: `docs/superpowers/specs/2026-11-16-1단계-오더흐름-design.md`
 - 기사용·고객용: React Native + Expo (TypeScript) 휴대폰 앱. **안드로이드 먼저**, 아이폰은 같은 코드로 나중에.
-- 관제용: **웹** (Next.js, TypeScript), PC 화면 기준.
+- 관제용: **웹** (Next.js, TypeScript), PC 화면 기준. 위치 `apps/admin`, 실행 `npm run dev -w @takson/admin` → http://localhost:3000 (설정은 `supabase/README.md` 5번).
 - 세 앱이 코드·타입을 공유하도록 한 저장소에서 관리.
 - 서버/실시간/로그인/사진: Supabase 무료 요금제 우선. 사진은 압축해서 무료 용량 안에서 운영.
 - 지도: 카카오맵 API. 알림: Expo 푸시.
