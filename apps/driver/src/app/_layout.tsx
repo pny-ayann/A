@@ -21,6 +21,7 @@ function Gate() {
       </Stack.Protected>
       <Stack.Protected guard={route === 'home'}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="order/[id]/index" options={{ headerShown: true, title: '오더' }} />
       </Stack.Protected>
     </Stack>
   );
