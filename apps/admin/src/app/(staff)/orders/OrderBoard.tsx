@@ -4,9 +4,12 @@ import type { REALTIME_SUBSCRIBE_STATES, RealtimePostgresChangesPayload } from '
 import { useEffect, useMemo, useState } from 'react';
 import { KakaoMap, type MapMarker } from '@/components/KakaoMap';
 import { OrderTable } from '@/components/OrderTable';
+import { unreadByOrder } from '@/lib/chat/unread';
+import { useUnread } from '@/lib/chat/useUnread';
 import { STATUS_LABEL, STATUS_ORDER, isUnassignedOverdue } from '@/lib/orders/labels';
 import { applyChange, boardSince, filterOrders, ORDER_ROW_COLUMNS, type OrderChange, type OrderRow } from '@/lib/orders/realtime';
 import { browserClient } from '@/lib/supabase/browser';
+import { subscribeAuthed } from '@/lib/supabase/realtime';
 
 type Named = { id: string; name: string };
 export type DriverLocation = { driver_id: string; lat: number; lng: number; updated_at: string };
@@ -30,6 +33,8 @@ export function OrderBoard({ initialOrders, companies, drivers, alertMin, initia
   const [reservedOnly, setReservedOnly] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [now, setNow] = useState<Date | null>(null);
+  const unreadRows = useUnread();
+  const unread = useMemo(() => unreadByOrder(unreadRows), [unreadRows]);
 
   // 미배차 경고는 1분마다 다시 계산
   useEffect(() => {
@@ -47,7 +52,7 @@ export function OrderBoard({ initialOrders, companies, drivers, alertMin, initia
         .order('created_at', { ascending: false }).limit(500);
       if (data) setOrders(data as OrderRow[]);
     };
-    const channel = supabase.channel('order-board')
+    return subscribeAuthed(supabase, () => supabase.channel('order-board')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' },
         (p: RealtimePostgresChangesPayload<OrderRow>) => setOrders(list => applyChange(list, p as unknown as OrderChange)))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'driver_locations' }, (p: RealtimePostgresChangesPayload<DriverLocation>) => {
@@ -61,8 +66,7 @@ export function OrderBoard({ initialOrders, companies, drivers, alertMin, initia
       .subscribe((status: `${REALTIME_SUBSCRIBE_STATES}`) => {
         if (status === 'SUBSCRIBED') { setLive('on'); void refetch(); }
         else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') setLive('off');
-      });
-    return () => { void supabase.removeChannel(channel); };
+      }));
   }, []);
 
   const companyName = useMemo(() => {
@@ -140,7 +144,7 @@ export function OrderBoard({ initialOrders, companies, drivers, alertMin, initia
 
         <div className="min-h-0 flex-1 overflow-auto rounded border bg-white">
           <OrderTable orders={shown} companyName={companyName} driverName={driverName}
-            selectedId={selectedId} onSelect={setSelectedId} now={now} alertMin={alertMin} />
+            selectedId={selectedId} onSelect={setSelectedId} now={now} alertMin={alertMin} unread={unread} />
         </div>
         <p className="mt-1 text-xs text-slate-500">진행 중인 오더와 최근 7일 오더를 보여 줘요. 줄을 누르면 지도에 표시돼요.</p>
       </div>

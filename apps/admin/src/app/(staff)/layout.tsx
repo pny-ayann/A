@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
+import { UnreadBadge } from '@/components/UnreadBadge';
 import { getStaffProfile } from '@/lib/supabase/server';
 import { logout } from '../login/actions';
 
@@ -26,6 +27,7 @@ export default async function StaffLayout({ children }: { children: ReactNode })
       <nav className="flex w-52 shrink-0 flex-col bg-slate-800 p-4 text-slate-100">
         <div className="mb-6 text-lg font-bold">탁송 관제</div>
         {staffMenu.map(m => <Link key={m.href} href={m.href} className="rounded px-2 py-1.5 hover:bg-slate-700">{m.label}</Link>)}
+        <Link href="/inquiries" className="flex items-center rounded px-2 py-1.5 hover:bg-slate-700">문의<UnreadBadge /></Link>
         {isAdmin && (
           <>
             <div className="mt-6 mb-1 px-2 text-xs text-slate-400">관리자</div>

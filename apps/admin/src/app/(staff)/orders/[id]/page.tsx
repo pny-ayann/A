@@ -1,6 +1,7 @@
 import type { OrderStatus } from '@takson/shared';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { ChatPanel } from '@/components/ChatPanel';
 import { AssignPanel } from '@/components/AssignPanel';
 import { EventTimeline, type TimelineEvent } from '@/components/EventTimeline';
 import { OrderEditForm } from '@/components/OrderEditForm';
@@ -8,12 +9,14 @@ import { PhotoGrid, type SignedPhoto, type SignedReceipt } from '@/components/Ph
 import { StatusPanel } from '@/components/StatusPanel';
 import { rowToForm } from '@/lib/orders/actions';
 import { STATUS_LABEL } from '@/lib/orders/labels';
-import { serverClient } from '@/lib/supabase/server';
+import { getStaffProfile, serverClient } from '@/lib/supabase/server';
 
 const SIGNED_URL_SEC = 60 * 60;
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const me = await getStaffProfile();
+  if (!me) notFound();
   const supabase = await serverClient();
   const { data: order } = await supabase.from('orders').select('*').eq('id', id).maybeSingle();
   if (!order) notFound();
@@ -58,7 +61,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const missionList = (missions.data ?? []) as unknown as { extra_fare: number; missions: { name: string } | null }[];
 
   return (
-    <div className="mx-auto max-w-5xl space-y-4">
+    <div className="mx-auto grid max-w-7xl gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
+    <div className="min-w-0 space-y-4">
       <div className="flex flex-wrap items-center gap-3">
         <Link href="/orders" className="text-sm text-slate-500 hover:underline">← 관제판</Link>
         <h1 className="text-xl font-bold">{company?.name ?? '?'} · {order.pickup_area ?? '?'} → {order.dropoff_area ?? '?'}</h1>
@@ -86,6 +90,10 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       <PhotoGrid photos={signedPhotos} receipts={signedReceipts} />
       <OrderEditForm key={order.id} orderId={id} initial={rowToForm(order)} companies={companies.data ?? []} />
       <EventTimeline events={timeline} />
+    </div>
+    <div className="xl:sticky xl:top-6 xl:self-start">
+      <ChatPanel orderId={id} myId={me.id} />
+    </div>
     </div>
   );
 }

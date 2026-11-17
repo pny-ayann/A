@@ -15,7 +15,9 @@ const STATUS_COLOR: Record<OrderRow['status'], string> = {
   cancelled: 'bg-slate-200 text-slate-600',
 };
 
-export function OrderTable({ orders, companyName, driverName, selectedId, onSelect, now, alertMin }: {
+export function OrderTable({ orders, companyName, driverName, selectedId, onSelect, now, alertMin, unread }: {
+  /** 오더별 안 읽은 문의 수 */
+  unread: Map<string, number>;
   orders: OrderRow[];
   companyName: (id: string) => string;
   driverName: (id: string | null) => string;
@@ -55,7 +57,13 @@ export function OrderTable({ orders, companyName, driverName, selectedId, onSele
                 <span className={`rounded px-1.5 py-0.5 text-xs ${STATUS_COLOR[o.status]}`}>{STATUS_LABEL[o.status]}</span>
                 {late && <span className="ml-1 text-xs font-semibold">배차 늦음</span>}
               </td>
-              <td className="px-2"><Link href={`/orders/${o.id}`} onClick={e => e.stopPropagation()} className="text-blue-600 hover:underline">상세</Link></td>
+              <td className="px-2 whitespace-nowrap">
+                <Link href={`/orders/${o.id}`} onClick={e => e.stopPropagation()} className="text-blue-600 hover:underline">상세</Link>
+                {(unread.get(o.id) ?? 0) > 0 && (
+                  <span title={`안 읽은 문의 ${unread.get(o.id)}개`} aria-label="안 읽은 문의 있음"
+                    className="ml-1 inline-block h-2 w-2 rounded-full bg-red-600 align-middle" />
+                )}
+              </td>
             </tr>
           );
         })}
