@@ -14,6 +14,7 @@ function Gate() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Protected guard={route === 'login'}>
         <Stack.Screen name="login" />
+        <Stack.Screen name="signup" />
       </Stack.Protected>
       <Stack.Protected guard={route === 'pending' || route === 'suspended'}>
         <Stack.Screen name="pending" />

@@ -1,8 +1,9 @@
 import { errorMessage, loginIdToEmail } from '@takson/shared';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { routeFor, type DriverProfile } from '@/lib/auth/gate';
-import { BigButton, Body, Field, Notice, Screen, Title } from '@/ui/kit';
+import { BigButton, Field, Notice, Screen, Title } from '@/ui/kit';
 
 export default function Login() {
   const [loginId, setLoginId] = useState('');
@@ -32,7 +33,7 @@ export default function Login() {
       <Field label="비밀번호" value={password} onChangeText={setPassword} secureTextEntry onSubmitEditing={submit} />
       {error && <Notice tone="danger">{error}</Notice>}
       <BigButton label="로그인" onPress={submit} busy={busy} disabled={!loginId || !password} />
-      <Body sub>계정이 없으면 관제에 문의해 주세요.</Body>
+      <BigButton label="처음이에요 (가입 신청)" tone="plain" onPress={() => router.push('/signup')} />
     </Screen>
   );
 }
