@@ -33,8 +33,8 @@ export async function registerPushToken(): Promise<'ok' | 'denied' | 'unsupporte
     const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId });
     const { data: s } = await supabase.auth.getSession();
     if (!s.session) return 'unsupported';
-    const { error } = await supabase.from('push_tokens')
-      .upsert({ user_id: s.session.user.id, token, updated_at: new Date().toISOString() });
+    // 이 휴대폰 토큰을 지금 사람 것으로 가져온다 (앞사람 줄이 남아 있으면 서버가 지운다)
+    const { error } = await supabase.rpc('claim_push_token', { p_token: token });
     if (error) return 'unsupported';
     await AsyncStorage.setItem(KEY, token);
     return 'ok';
@@ -48,7 +48,9 @@ export async function unregisterPushToken(): Promise<void> {
   try {
     const token = await AsyncStorage.getItem(KEY);
     if (!token) return;
-    await supabase.from('push_tokens').delete().eq('token', token);
+    const { error } = await supabase.from('push_tokens').delete().eq('token', token);
+    // 서버에서 못 지웠으면(오프라인 등) 기억해 둔다. 다음 로그인 때 claim_push_token이 정리한다.
+    if (error) return;
     await AsyncStorage.removeItem(KEY);
   } catch {
     // 지우지 못해도 로그아웃은 계속
