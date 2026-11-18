@@ -27,3 +27,12 @@ export function subscribeAuthed(client: RealtimeClientLike, build: () => Realtim
     if (channel) void client.removeChannel(channel);
   };
 }
+
+let topicSeq = 0;
+/**
+ * 화면마다 다른 실시간 채널 이름. 같은 이름을 두 화면이 쓰면 supabase가 같은 채널을 돌려줘서
+ * 두 번째 화면이 이미 구독된 채널에 콜백을 붙이다 오류가 난다(오더 화면 위에 주유 화면을 열 때).
+ */
+export function uniqueTopic(base: string): string {
+  return `${base}-${++topicSeq}`;
+}

@@ -39,3 +39,11 @@ test('준비 전에 정리되면 구독하지 않고, 구독 뒤 정리되면 �
   stopB();
   expect(b.log).toEqual(['setAuth:tok', 'subscribe', 'remove']);
 });
+
+test('같은 오더를 두 화면이 동시에 구독해도 채널 이름이 겹치지 않는다', async () => {
+  const { uniqueTopic } = await import('./realtime');
+  const a = uniqueTopic('order-O1');
+  const b = uniqueTopic('order-O1');
+  expect(a).not.toBe(b);
+  expect(a.startsWith('order-O1')).toBe(true);
+});

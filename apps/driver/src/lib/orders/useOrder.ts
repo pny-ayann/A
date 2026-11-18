@@ -1,4 +1,4 @@
-import { subscribeAuthed, type OrderStatus } from '@takson/shared';
+import { subscribeAuthed, uniqueTopic, type OrderStatus } from '@takson/shared';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../supabase';
@@ -65,7 +65,7 @@ export function useOrder(id: string, myId: string | undefined) {
   useEffect(() => {
     void supabase.from('settings').select('release_min_takson, release_min_daeri').maybeSingle()
       .then(({ data }) => { if (data) setSettings(data); });
-    return subscribeAuthed(supabase, () => supabase.channel(`order-${id}`)
+    return subscribeAuthed(supabase, () => supabase.channel(uniqueTopic(`order-${id}`))
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${id}` }, () => void load())
       .subscribe());
   }, [id, load]);

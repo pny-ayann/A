@@ -1,5 +1,5 @@
 import type { REALTIME_SUBSCRIBE_STATES, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
-import { readMark, subscribeAuthed } from '@takson/shared';
+import { readMark, subscribeAuthed, uniqueTopic } from '@takson/shared';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { FlatList, KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from 'react-native';
@@ -30,7 +30,7 @@ export default function Chat() {
         .eq('order_id', id).eq('thread', 'driver').order('created_at');
       if (alive && data) setMessages(data as Message[]);
     };
-    const stop = subscribeAuthed(supabase, () => supabase.channel(`driver-chat-${id}`)
+    const stop = subscribeAuthed(supabase, () => supabase.channel(uniqueTopic(`driver-chat-${id}`))
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `order_id=eq.${id}` },
         (p: RealtimePostgresChangesPayload<Message & { thread: string }>) => {
           const m = p.new as Message & { thread: string };
