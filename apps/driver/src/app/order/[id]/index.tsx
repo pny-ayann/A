@@ -3,10 +3,12 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { PhotoSlots } from '@/components/PhotoSlots';
 import { StopBlock } from '@/components/StopBlock';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { currentPosition } from '@/lib/location/current';
 import { nextAction, releaseRemainingMs } from '@/lib/orders/progress';
+import { usePhotoQueue } from '@/lib/photos/PhotoQueueProvider';
 import { useOrder } from '@/lib/orders/useOrder';
 import { supabase } from '@/lib/supabase';
 import { kstShort, won } from '@/lib/time';
@@ -25,6 +27,10 @@ export default function OrderDetail() {
   const [now, setNow] = useState(() => new Date());
   const [releasing, setReleasing] = useState(false);
   const [reason, setReason] = useState('');
+  const queue = usePhotoQueue();
+
+  // 사진이 하나 올라갈 때마다 서버 사진 상태를 다시 읽는다
+  useEffect(() => { if (queue.uploadedTick > 0) void reload(); }, [queue.uploadedTick, reload]);
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
@@ -41,7 +47,8 @@ export default function OrderDetail() {
   }
   if (!order) return <View style={{ flex: 1, backgroundColor: color.bg }} />;
 
-  const pendingUploads = 0; // Task 5에서 휴대폰 업로드 대기 수로 바꿈
+  const photoPhase = order.status === 'driving' ? 'dropoff' : order.status === 'arrived_pickup' || order.status === 'assigned' ? 'pickup' : null;
+  const pendingUploads = photoPhase ? queue.pending(id, photoPhase) : 0;
   const action = nextAction(order.status, missing, pendingUploads);
   const canRelease = order.assigned_at && (order.status === 'assigned' || order.status === 'arrived_pickup');
   const releaseLeft = canRelease ? releaseRemainingMs(order.assigned_at!, order.kind, settings, now) : 0;
@@ -90,6 +97,12 @@ export default function OrderDetail() {
           {order.missions.length > 0 ? <Body>미션: {order.missions.join(', ')}</Body> : null}
           {order.driver_memo ? <Body>메모: {order.driver_memo}</Body> : null}
         </Card>
+        {photoPhase && (
+          <Card>
+            <PhotoSlots orderId={id} phase={photoPhase} missing={photoPhase === 'pickup' ? missing.pickup : missing.dropoff} />
+          </Card>
+        )}
+        {queue.dropNotice && <Notice tone="danger">{queue.dropNotice}</Notice>}
         {done && <Notice tone="ok">운행을 마쳤어요. 수고하셨어요!</Notice>}
         {message && <Notice tone={message.tone}>{message.text}</Notice>}
         {releaseLeft > 0 && !releasing && (

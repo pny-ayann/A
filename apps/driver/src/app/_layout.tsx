@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '@/lib/auth/AuthProvider';
+import { PhotoQueueProvider } from '@/lib/photos/PhotoQueueProvider';
 import { color } from '@/ui/kit';
 
 function Gate() {
@@ -22,6 +23,7 @@ function Gate() {
       <Stack.Protected guard={route === 'home'}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="order/[id]/index" options={{ headerShown: true, title: '오더' }} />
+        <Stack.Screen name="order/[id]/camera" options={{ presentation: 'fullScreenModal' }} />
       </Stack.Protected>
     </Stack>
   );
@@ -32,7 +34,9 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <AuthProvider>
         <StatusBar style="dark" />
-        <Gate />
+        <PhotoQueueProvider>
+          <Gate />
+        </PhotoQueueProvider>
       </AuthProvider>
     </SafeAreaProvider>
   );
