@@ -1,10 +1,11 @@
 import { errorMessage } from '@takson/shared';
 import { router, useFocusEffect, type Href } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
-import { FlatList, RefreshControl, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { DeviceEventEmitter, FlatList, RefreshControl, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { OrderCard } from '@/components/OrderCard';
 import { currentPosition, type LatLng } from '@/lib/location/current';
+import { PUSH_RECEIVED } from '@/lib/push/PushSetup';
 import { sortOpenOrders, type OpenOrder } from '@/lib/orders/list';
 import { supabase } from '@/lib/supabase';
 import { useFocusedInterval } from '@/lib/useInterval';
@@ -30,6 +31,11 @@ export default function OpenOrders() {
 
   useFocusEffect(useCallback(() => { void load(true); }, [load]));
   useFocusedInterval(() => void load(), 15_000);
+  // 새 오더 알림이 오면 바로 다시 읽는다
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener(PUSH_RECEIVED, () => void load());
+    return () => sub.remove();
+  }, [load]);
 
   async function grab(id: string) {
     setMessage(null);

@@ -1,6 +1,7 @@
 import type { Session } from '@supabase/supabase-js';
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { supabase } from '../supabase';
+import { unregisterPushToken } from '../push/register';
 import { routeFor, type DriverProfile, type Route } from './gate';
 
 type AuthState = {
@@ -53,7 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     profile,
     route: session ? routeFor(profile) : 'login',
     reload: async () => { const { data } = await supabase.auth.getSession(); await apply(data.session); },
-    signOut: async () => { await supabase.auth.signOut(); },
+    signOut: async () => { await unregisterPushToken(); await supabase.auth.signOut(); },
   };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

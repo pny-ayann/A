@@ -5,6 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '@/lib/auth/AuthProvider';
 import { LocationReporter } from '@/lib/location/LocationReporter';
 import '@/lib/location/task'; // 화면 꺼짐 위치 작업 등록 (앱 시작 때 꼭 한 번)
+import { PushSetup } from '@/lib/push/PushSetup';
 import { PhotoQueueProvider } from '@/lib/photos/PhotoQueueProvider';
 import { color } from '@/ui/kit';
 
@@ -41,6 +42,7 @@ export default function RootLayout() {
         <PhotoQueueProvider>
           <LocationReporter>
             <Gate />
+            <PushSetup />
           </LocationReporter>
         </PhotoQueueProvider>
       </AuthProvider>
