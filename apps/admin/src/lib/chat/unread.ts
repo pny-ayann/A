@@ -22,12 +22,5 @@ export function unreadByOrder(rows: UnreadRow[]): Map<string, number> {
 /** 안 읽은 수가 바뀌었을 수 있다고 화면 곳곳(메뉴, 관제판)에 알리는 브라우저 이벤트 이름 */
 export const UNREAD_CHANGED = 'takson:unread-changed';
 
-/**
- * 읽음 처리 시각 = 본 메시지 중 마지막 것의 서버 시각(마이크로초 포함 원문). 메시지가 없으면 null(기록 안 함).
- * 내 컴퓨터 시계를 쓰면, 느릴 땐 방금 본 메시지가 '안 읽음'으로 남고 빠를 땐 그동안 온 새 문의를 놓친다.
- */
-export function readMark(createdAts: string[]): string | null {
-  let latest: string | null = null;
-  for (const c of createdAts) if (latest === null || new Date(c).getTime() >= new Date(latest).getTime()) latest = c;
-  return latest;
-}
+/** 읽음 처리 시각 규칙은 기사 앱과 같아야 해서 공용 패키지에 있다 */
+export { readMark } from '@takson/shared';

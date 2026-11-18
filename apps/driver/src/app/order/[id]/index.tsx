@@ -1,5 +1,5 @@
 import { errorMessage } from '@takson/shared';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -102,7 +102,19 @@ export default function OrderDetail() {
             <PhotoSlots orderId={id} phase={photoPhase} missing={photoPhase === 'pickup' ? missing.pickup : missing.dropoff} />
           </Card>
         )}
-        {queue.dropNotice && <Notice tone="danger">{queue.dropNotice}</Notice>}
+        {!done && (
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <View style={{ flex: 1 }}>
+              <BigButton label="관제에 문의" tone="plain" onPress={() => router.push(`/order/${id}/chat` as Href)} />
+            </View>
+            {(order.status === 'arrived_pickup' || order.status === 'driving') && (
+              <View style={{ flex: 1 }}>
+                <BigButton label="주유 등록" tone="plain" onPress={() => router.push(`/order/${id}/fuel` as Href)} />
+              </View>
+            )}
+          </View>
+        )}
+        {queue.dropNotice &&<Notice tone="danger">{queue.dropNotice}</Notice>}
         {done && <Notice tone="ok">운행을 마쳤어요. 수고하셨어요!</Notice>}
         {message && <Notice tone={message.tone}>{message.text}</Notice>}
         {releaseLeft > 0 && !releasing && (

@@ -24,6 +24,8 @@ function Gate() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="order/[id]/index" options={{ headerShown: true, title: '오더' }} />
         <Stack.Screen name="order/[id]/camera" options={{ presentation: 'fullScreenModal' }} />
+        <Stack.Screen name="order/[id]/chat" options={{ headerShown: true, title: '관제 문의' }} />
+        <Stack.Screen name="order/[id]/fuel" options={{ headerShown: true, title: '주유 등록' }} />
       </Stack.Protected>
     </Stack>
   );
