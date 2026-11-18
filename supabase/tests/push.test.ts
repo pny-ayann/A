@@ -94,7 +94,7 @@ describe('관제 메시지', () => {
     await clear();
     await as(w.db, w.op, tx => tx.query(`insert into messages(order_id, thread, body) values ($1, 'driver', '정문으로 오세요')`, [o]));
     const m = await sent();
-    expect(m).toEqual([expect.objectContaining({ to: 'T_d', title: '관제 메시지', body: '정문으로 오세요', data: { orderId: o, screen: 'chat' } })]);
+    expect(m).toEqual([expect.objectContaining({ to: 'T_d', title: '관제 메시지', body: '관제에서 메시지가 왔어요', data: { orderId: o, screen: 'chat' } })]);
   });
 
   test('기사가 보낸 메시지와 고객 문의는 기사에게 보내지 않는다', async () => {
@@ -103,6 +103,54 @@ describe('관제 메시지', () => {
     await as(w.db, w.d, tx => tx.query(`insert into messages(order_id, thread, body) values ($1, 'driver', '도착했어요')`, [o]));
     await as(w.db, w.op, tx => tx.query(`insert into messages(order_id, thread, body) values ($1, 'customer', '고객님 안내')`, [o]));
     expect(await requests()).toEqual([]);
+  });
+});
+
+describe('관제 메시지 내용은 잠금화면에 보이지 않는다', () => {
+  test('알림 내용에 채팅 글이 들어가지 않는다', async () => {
+    const o = await seedOrder(w.db, w.A, { status: 'assigned', driver_id: w.d });
+    await clear();
+    await as(w.db, w.op, tx => tx.query(`insert into messages(order_id, thread, body) values ($1, 'driver', '비밀번호 1234')`, [o]));
+    const m = await sent();
+    expect(m).toHaveLength(1);
+    expect(JSON.stringify(m)).not.toContain('1234');
+  });
+});
+
+describe('claim_push_token (휴대폰을 다른 기사가 이어 쓸 때)', () => {
+  const owners = async (t: string) =>
+    (await w.db.query<{ user_id: string }>('select user_id from push_tokens where token = $1 order by user_id', [t])).rows.map(r => r.user_id);
+
+  test('앞사람 토큰 줄을 지우고 지금 사람 것으로 등록한다', async () => {
+    // 기사 d가 오프라인에서 로그아웃해 T_d 줄이 남아 있는 상태에서 d2가 같은 휴대폰으로 로그인
+    await as(w.db, w.d2, tx => tx.query(`select claim_push_token('T_d')`));
+    expect(await owners('T_d')).toEqual([w.d2]);
+    // d2의 다른 휴대폰 토큰은 그대로
+    expect(await owners('T_d2')).toEqual([w.d2]);
+  });
+
+  test('이후 앞사람 알림은 이 휴대폰으로 오지 않는다', async () => {
+    await as(w.db, w.d2, tx => tx.query(`select claim_push_token('T_d')`));
+    await w.db.query(`select send_push(array[$1::uuid], '제목', '내용', '{}')`, [w.d]);
+    expect(await requests()).toEqual([]);
+  });
+
+  test('같은 사람이 다시 부르면 그대로 한 줄이다', async () => {
+    await as(w.db, w.d, tx => tx.query(`select claim_push_token('T_d')`));
+    await as(w.db, w.d, tx => tx.query(`select claim_push_token('T_d')`));
+    expect(await owners('T_d')).toEqual([w.d]);
+  });
+
+  test('빈 토큰은 거절한다', async () => {
+    await expectError(as(w.db, w.d, tx => tx.query(`select claim_push_token('')`)), 'INVALID_TOKEN');
+  });
+
+  test('로그인 안 한 사람은 부를 수 없다', async () => {
+    await expectError(w.db.transaction(async tx => {
+      await tx.exec('set local role anon');
+      await tx.query(`select claim_push_token('T_d')`);
+    }), 'permission denied');
+    expect(await owners('T_d')).toEqual([w.d]);
   });
 });
 
