@@ -33,6 +33,15 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "배차 중에는 화면이 꺼져도 관제가 기사님 위치를 볼 수 있도록 위치를 사용해요.",
+          "locationWhenInUsePermission": "가까운 주문을 보여 주고 관제에 위치를 알리려고 위치를 사용해요.",
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
+        }
       ]
     ],
     "experiments": {
