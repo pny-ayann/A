@@ -1,0 +1,43 @@
+# EAS 빌드 서버에 올리지 않을 것. 이 파일이 있으면 EAS는 .gitignore 대신 이것만 본다.
+# 다른 프로젝트(로그인 정보가 든 브라우저 프로필 포함)와 비밀 파일이 절대 올라가지 않게 한다.
+
+# 이 저장소와 상관없는 다른 프로젝트·작업 폴더
+carauction-auto/
+mycar-auto/
+docs/
+graphify-out/
+.superpowers/
+.claude/
+
+# 비밀 값 (google-services.json은 EAS 파일 환경변수로 따로 받는다)
+.env
+.env.*
+!.env*.example
+**/google-services.json
+*.jks
+*.p8
+*.p12
+*.key
+*.pem
+*.mobileprovision
+
+# 만들어지는 파일·캐시
+node_modules/
+dist/
+build/
+web-build/
+.next/
+.expo/
+.kotlin/
+coverage/
+supabase/.temp/
+apps/driver/android/
+apps/driver/ios/
+apps/driver/expo-env.d.ts
+*.log
+*.tsbuildinfo
+.metro-health-check*
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
