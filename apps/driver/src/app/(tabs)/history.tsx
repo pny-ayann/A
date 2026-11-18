@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react';
 import { FlatList, RefreshControl, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/lib/auth/AuthProvider';
-import { summarize } from '@/lib/history/summary';
+import { latestPerOrder, summarize } from '@/lib/history/summary';
 import { supabase } from '@/lib/supabase';
 import { kstShort, won } from '@/lib/time';
 import { BigButton, Body, Card, color } from '@/ui/kit';
@@ -28,10 +28,10 @@ export default function History() {
       .gte('created_at', since).order('created_at', { ascending: false }).limit(500);
     setLoading(false);
     if (!data) return;
-    setRows((data as unknown as Row[]).map(r => ({
+    setRows(latestPerOrder((data as unknown as Row[]).map(r => ({
       orderId: r.order_id, completedAt: r.created_at, fare: r.orders.fare, kind: r.orders.kind,
       from: r.orders.pickup_address, to: r.orders.dropoff_address,
-    })));
+    }))));
   }, [profile]);
 
   useFocusEffect(useCallback(() => { void load(); }, [load]));

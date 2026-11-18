@@ -15,3 +15,16 @@ export function summarize(rows: { completedAt: string; fare: number }[], now: Da
   }
   return { today, month };
 }
+
+/**
+ * 같은 오더의 완료 기록이 여러 번이면(관제가 완료를 되돌린 뒤 다시 완료) 가장 늦은 것 하나만 남긴다.
+ * 순서는 완료 시각 최신순.
+ */
+export function latestPerOrder<T extends { orderId: string; completedAt: string }>(rows: T[]): T[] {
+  const best = new Map<string, T>();
+  for (const r of rows) {
+    const b = best.get(r.orderId);
+    if (!b || Date.parse(r.completedAt) > Date.parse(b.completedAt)) best.set(r.orderId, r);
+  }
+  return [...best.values()].sort((a, b) => Date.parse(b.completedAt) - Date.parse(a.completedAt));
+}

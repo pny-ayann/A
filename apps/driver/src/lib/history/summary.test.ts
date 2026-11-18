@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { summarize } from './summary';
+import { latestPerOrder, summarize } from './summary';
 
 const now = new Date('2026-11-17T15:30:00Z'); // 한국 11/18 00:30
 
@@ -29,4 +29,15 @@ test('지난달과 작년 같은 달은 빼고 합친다', () => {
   ], now);
   expect(r.today).toEqual({ count: 1, sum: 30000 });
   expect(r.month).toEqual({ count: 2, sum: 40000 });
+});
+
+test('관제가 완료를 되돌려 같은 오더가 두 번 완료돼도 한 건으로, 마지막 완료 시각으로 센다', () => {
+  const rows = latestPerOrder([
+    { orderId: 'O1', completedAt: '2026-11-17T15:20:00Z', fare: 30000 },
+    { orderId: 'O2', completedAt: '2026-11-17T15:15:00Z', fare: 10000 },
+    { orderId: 'O1', completedAt: '2026-11-17T14:00:00Z', fare: 30000 },
+  ]);
+  expect(rows.map(r => r.orderId)).toEqual(['O1', 'O2']);
+  expect(rows[0].completedAt).toBe('2026-11-17T15:20:00Z');
+  expect(summarize(rows, now).today).toEqual({ count: 2, sum: 40000 });
 });
