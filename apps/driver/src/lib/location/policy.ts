@@ -7,13 +7,13 @@ export const LOCATION_TASK = 'takson-driver-location';
 export const FOREGROUND_INTERVAL_MS = 30_000;
 
 /**
- * 화면이 꺼져도 보내는 설정. 배터리를 아끼려고 1분 또는 100m마다, 정확도는 '보통'.
+ * 화면이 꺼져도 보내는 설정. 1분마다(멈춰 있어도 — 관제가 '신호 끊김'과 '정차'를 구분하게), 정확도는 '보통'으로 배터리를 아낀다.
  * (설계 11장: 배터리 판단은 만드는 사람 몫)
  */
 export const LOCATION_OPTIONS = {
   accuracy: Location.Accuracy.Balanced,
   timeInterval: 60_000,
-  distanceInterval: 100,
+  distanceInterval: 0,
   deferredUpdatesInterval: 60_000,
 };
 

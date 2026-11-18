@@ -65,7 +65,8 @@ export function LocationReporter({ children }: { children: ReactNode }) {
     void (async () => {
       try {
         const running = await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK);
-        if (want && !running) {
+        // 이미 돌고 있어도 다시 시작해 앱 업데이트로 바뀐 설정을 반영한다
+        if (want) {
           await Location.startLocationUpdatesAsync(LOCATION_TASK, { ...LOCATION_OPTIONS, foregroundService: FOREGROUND_SERVICE });
         } else if (!want && running) {
           await Location.stopLocationUpdatesAsync(LOCATION_TASK);
