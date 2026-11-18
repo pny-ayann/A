@@ -82,6 +82,58 @@ npm run dev -w @takson/admin
 4. 브라우저에서 http://localhost:3000 을 열고 관리자 계정으로 로그인해요.
 5. 문의 화면 확인용으로 테스트 고객 메시지를 하나 보낼 수 있어요: `npm run dev:message -- "보낼 말"`
 
+## 6. 기사 앱 켜기
+
+### 6-1. 연결 정보
+
+`apps/driver/.env.example`을 같은 폴더에 `.env`로 복사하고, 4번의 Project URL과 anon public key를 넣어요. (이 파일은 GitHub에 올라가지 않아요)
+
+### 6-2. 화면만 빨리 보기 (브라우저)
+
+```bash
+npm run web -w @takson/driver
+```
+
+카메라·화면 꺼짐 위치·푸시는 브라우저에서 안 돼요. 화면 모양과 오더 흐름만 볼 때 써요.
+
+### 6-3. 휴대폰에서 개발하며 보기 (개발용 앱)
+
+푸시와 화면 꺼짐 위치는 **Expo Go로는 안 되고**, 우리 전용 개발용 앱(개발 빌드)이 있어야 해요. 한 번 설치하면 코드를 고칠 때마다 다시 설치하지 않아도 돼요.
+
+1. PC와 휴대폰을 **같은 와이파이**에 연결해요.
+2. `apps/driver` 폴더에서 실행해요.
+
+```bash
+npx.cmd expo start --dev-client --port 8082
+```
+
+3. 휴대폰의 탁송 개발용 앱을 열고, 서버 고르는 화면이 나오면 PC 주소(예: `192.168.x.x:8082`)를 눌러요.
+4. 고친 코드가 휴대폰에 안 들어오면 **휴대폰을 흔들어 Reload**를 눌러요.
+
+### 6-4. 설치 파일(APK) 새로 만들기
+
+처음 한 번만 준비해요. (이미 해 둠: Expo 계정, Firebase 프로젝트 `takson`, 푸시 키 업로드)
+
+- `google-services.json`(Firebase → 안드로이드 앱 `com.takson.driver`)은 GitHub에 올리지 않고, EAS 파일 환경변수 `GOOGLE_SERVICES_JSON`으로 넣어 둬요.
+- 푸시용 FCM V1 서비스 계정 키는 expo.dev → 프로젝트 → Credentials에 직접 올려요. **키 파일을 채팅이나 GitHub에 올리지 마세요.**
+- 저장소 루트의 `.easignore`가 다른 폴더와 비밀 파일이 빌드 서버로 올라가지 않게 막아요.
+
+`apps/driver` 폴더에서:
+
+```bash
+npx.cmd eas-cli build -p android --profile development
+```
+
+- `development`: 6-3에서 쓰는 개발용 앱
+- `preview`: PC 없이 혼자 도는 시험용 앱. 만들기 전에 EAS의 preview 환경변수에 `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`를 넣어야 해요.
+
+빌드가 끝나면 나오는 링크(또는 QR)를 기사님 휴대폰으로 열어 설치해요. 처음 설치할 때 '출처를 알 수 없는 앱 설치'를 허용해야 해요.
+
+### 6-5. 휴대폰 권한
+
+- 위치: 배차된 오더가 있을 때 앱이 '항상 허용'을 부탁해요. 허용하면 화면이 꺼져도 1분마다 위치를 보내고, 알림창에 "탁송 운행 중" 알림이 떠요. 오더가 끝나면 사라져요.
+- 알림: 처음 로그인할 때 허용해요. 로그아웃하면 이 휴대폰으로 알림이 더 오지 않아요.
+
 ## 개발자용 메모
 
 - 테스트: 저장소 루트에서 `npm test`. Docker 없이 PGlite로 실제 마이그레이션을 돌려 검사해요.

@@ -55,3 +55,18 @@ grant execute on function storage.foldername(text) to anon, authenticated, servi
 
 -- 실제 Supabase에는 이미 있는 실시간 발행
 create publication supabase_realtime;
+
+-- 실제 Supabase의 pg_net 확장(net.http_post)을 흉내: 보내는 대신 표에 쌓는다
+create schema net;
+create table net.http_requests_log (
+  id bigserial primary key,
+  url text not null,
+  body jsonb,
+  headers jsonb,
+  created_at timestamptz not null default now()
+);
+create function net.http_post(url text, body jsonb default '{}'::jsonb, params jsonb default '{}'::jsonb,
+  headers jsonb default '{"Content-Type": "application/json"}'::jsonb, timeout_milliseconds int default 5000)
+returns bigint language sql as $$
+  insert into net.http_requests_log(url, body, headers) values (url, body, headers) returning id
+$$;

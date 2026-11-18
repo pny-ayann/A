@@ -1,0 +1,41 @@
+import * as Location from 'expo-location';
+
+/** 백그라운드 위치 작업 이름 (task.ts에서 등록) */
+export const LOCATION_TASK = 'takson-driver-location';
+
+/** 앱이 켜져 있을 때 위치를 보내는 간격 */
+export const FOREGROUND_INTERVAL_MS = 30_000;
+
+/**
+ * 화면이 꺼져도 보내는 설정. 1분마다(멈춰 있어도 — 관제가 '신호 끊김'과 '정차'를 구분하게), 정확도는 '보통'으로 배터리를 아낀다.
+ * (설계 11장: 배터리 판단은 만드는 사람 몫)
+ */
+export const LOCATION_OPTIONS = {
+  accuracy: Location.Accuracy.Balanced,
+  timeInterval: 60_000,
+  distanceInterval: 0,
+  deferredUpdatesInterval: 60_000,
+};
+
+export const FOREGROUND_SERVICE = {
+  notificationTitle: '탁송 운행 중',
+  notificationBody: '탁송 운행 중 위치를 보내고 있어요',
+};
+
+/** 백그라운드 위치는 로그인돼 있고, 진행 중 오더가 있고, '항상 허용'일 때만 */
+export function shouldTrackInBackground(s: {
+  hasSession: boolean;
+  activeOrderCount: number;
+  permission: 'granted' | 'denied' | 'undetermined';
+}): boolean {
+  return s.hasSession && s.activeOrderCount > 0 && s.permission === 'granted';
+}
+
+/**
+ * 화면 꺼짐 위치 작업이 스스로 멈출지. 신호가 없어 로그인 갱신만 실패한 경우(터널 등)는
+ * 멈추지 않고 다음 차례에 다시 해 본다. 정말 로그아웃됐거나 갱신이 거절됐을 때만 멈춘다.
+ */
+export function shouldStopLocationTask(hasSession: boolean, error: { name?: string } | null): boolean {
+  if (hasSession) return false;
+  return error?.name !== 'AuthRetryableFetchError';
+}
