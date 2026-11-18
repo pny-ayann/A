@@ -6,7 +6,8 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 import { AppState, Platform } from 'react-native';
 import { currentPosition } from '../location/current';
 import { compressPhoto } from './image';
-import { applyResult, due, enqueue, pendingCount, retryNow, type Phase, type QueueItem, type Slot } from './queue';
+import { supabase } from '../supabase';
+import { applyResult, due, enqueue, pendingCount, resolveDrop, retryNow, type Phase, type QueueItem, type Slot } from './queue';
 import { deleteLocal, uploadOne } from './uploader';
 
 const KEY = 'photo-queue-v1';
@@ -26,6 +27,18 @@ type Ctx = {
 };
 
 const PhotoQueueCtx = createContext<Ctx | null>(null);
+
+/**
+ * 서버가 거부했을 때 정말 버릴지 확인: 로그인돼 있고 오더가 더는 내 것이 아닐 때만 버린다.
+ * (신호가 나빠 로그인 갱신이 실패한 경우, 로그아웃 중인 경우에는 사진을 지키고 나중에 다시 시도)
+ */
+async function confirmDrop(orderId: string): Promise<'retry' | 'drop'> {
+  const { data: s } = await supabase.auth.getSession();
+  const uid = s.session?.user.id;
+  if (!uid) return resolveDrop({ hasSession: false, stillMine: true });
+  const { data, error } = await supabase.from('orders').select('id').eq('id', orderId).eq('driver_id', uid).maybeSingle();
+  return resolveDrop({ hasSession: true, stillMine: !!error || !!data });
+}
 
 /** 찍은 사진을 앱 전용 폴더로 옮겨 캐시가 지워져도 남게 한다 (웹은 개발 확인용이라 그대로) */
 function keepFile(uri: string, id: string): string {
@@ -56,7 +69,8 @@ export function PhotoQueueProvider({ children }: { children: ReactNode }) {
     running.current = true;
     try {
       for (const i of due(ref.current, Date.now())) {
-        const r = await uploadOne(i);
+        const first = await uploadOne(i);
+        const r = first === 'denied' ? await confirmDrop(i.orderId) : first;
         if (r !== 'retry') deleteLocal(i.localUri);
         if (r === 'drop') setDropNotice('관제가 오더를 회수·취소해서 올리지 못한 사진이 있어요.');
         save(applyResult(ref.current, i.id, r, Date.now()));
@@ -92,9 +106,12 @@ export function PhotoQueueProvider({ children }: { children: ReactNode }) {
 
   const add = useCallback(async (shot: Shot, what: Add) => {
     const id = randomUUID();
+    // 위치는 압축과 동시에, 길어야 2초만 (지하에서 한 장마다 10초씩 기다리지 않게)
+    const posP = currentPosition(2_000);
     const small = await compressPhoto(shot.uri, shot.width, shot.height);
+    const pos = await posP;
+    // 파일을 옮긴 바로 뒤에 대기열에 저장해, 그 사이 앱이 꺼져 사진이 길을 잃지 않게 한다
     const localUri = keepFile(small, id);
-    const pos = await currentPosition();
     const item: QueueItem = {
       id, kind: what.kind, orderId: what.orderId,
       phase: what.kind === 'photo' ? what.phase : null,

@@ -5,12 +5,13 @@ export type Action = { label: string; enabled: boolean; hint: string | null };
 
 /**
  * 화면 아래 상태 버튼. 사진 잠금은 서버의 missing_photos 결과로만 판단하고,
- * 휴대폰에 남은 업로드 대기가 있으면 그것을 먼저 알려 준다.
+ * 휴대폰에 남은 업로드 대기(이 오더의 모든 사진·영수증)가 있으면 잠그고 그것을 먼저 알려 준다.
  */
 export function nextAction(status: OrderStatus, missing: Missing, pendingUploads: number): Action | null {
   const gated = (label: string, phaseName: string, left: string[]): Action => {
-    if (left.length === 0) return { label, enabled: true, hint: null };
+    // 휴대폰에 남은 사진·영수증을 먼저 올려야 한다 (상태가 넘어가면 서버가 받지 않아 사라짐)
     if (pendingUploads > 0) return { label, enabled: false, hint: `업로드 대기 ${pendingUploads}장` };
+    if (left.length === 0) return { label, enabled: true, hint: null };
     return { label, enabled: false, hint: `${phaseName} 사진 ${left.length}장이 더 필요해요` };
   };
   switch (status) {

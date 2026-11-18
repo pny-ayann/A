@@ -1,9 +1,10 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { FlatList, RefreshControl, Text, View } from 'react-native';
+import { Alert, FlatList, Platform, RefreshControl, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { latestPerOrder, summarize } from '@/lib/history/summary';
+import { usePhotoQueue } from '@/lib/photos/PhotoQueueProvider';
 import { supabase } from '@/lib/supabase';
 import { kstShort, won } from '@/lib/time';
 import { BigButton, Body, Card, color } from '@/ui/kit';
@@ -14,6 +15,16 @@ type Row = { order_id: string; created_at: string; orders: { fare: number; kind:
 /** 운행 내역: 오늘·이번 달(한국 시간) 건수와 요금 합계, 최근 완료 30건 */
 export default function History() {
   const { profile, signOut } = useAuth();
+  const { items: waiting } = usePhotoQueue();
+
+  // 아직 못 올린 사진·영수증이 있으면 로그아웃 전에 알린다 (다른 기사가 로그인하면 올라가지 못함)
+  const confirmSignOut = () => {
+    if (waiting.length === 0 || Platform.OS === 'web') { void signOut(); return; }
+    Alert.alert('아직 못 올린 사진이 있어요', `사진·영수증 ${waiting.length}장이 아직 올라가지 않았어요. 신호가 잡히는 곳에서 다 올라간 뒤 로그아웃해 주세요.`, [
+      { text: '기다릴게요', style: 'cancel' },
+      { text: '그래도 로그아웃', style: 'destructive', onPress: () => void signOut() },
+    ]);
+  };
   const [rows, setRows] = useState<Done[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -65,7 +76,7 @@ export default function History() {
         ListFooterComponent={
           <View style={{ marginTop: 16, gap: 8 }}>
             <Body sub>{profile?.name} 기사님</Body>
-            <BigButton label="로그아웃" tone="plain" onPress={signOut} />
+            <BigButton label="로그아웃" tone="plain" onPress={confirmSignOut} />
           </View>
         } />
     </SafeAreaView>

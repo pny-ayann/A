@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { applyResult, backoffMs, classifyError, due, enqueue, pendingCount, retryNow, storagePath, type QueueItem } from './queue';
+import { applyResult, backoffMs, classifyError, resolveDrop, due, enqueue, pendingCount, retryNow, storagePath, type QueueItem } from './queue';
 
 const item = (p: Partial<QueueItem>): QueueItem => ({
   id: 'I1', kind: 'photo', orderId: 'O1', phase: 'pickup', slot: 'front', localUri: 'file:///q/I1.jpg',
@@ -76,4 +76,10 @@ test('앱을 껐다 켜도(저장했다 읽어도) 똑같이 동작', () => {
   const restored = JSON.parse(JSON.stringify(q)) as QueueItem[];
   expect(due(restored, 10).map(i => i.id)).toEqual(['a']);
   expect(pendingCount(restored, 'O1', 'pickup')).toBe(2);
+});
+
+test('권한 거부여도 로그인이 풀렸거나(신호 나빠 갱신 실패) 아직 내 오더면 사진을 버리지 않고 다시 시도', () => {
+  expect(resolveDrop({ hasSession: false, stillMine: false })).toBe('retry');
+  expect(resolveDrop({ hasSession: true, stillMine: true })).toBe('retry');
+  expect(resolveDrop({ hasSession: true, stillMine: false })).toBe('drop');
 });

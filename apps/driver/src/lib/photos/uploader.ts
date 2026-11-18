@@ -18,7 +18,8 @@ function fileGone(uri: string): boolean {
  * 대기열 한 장을 올린다: 저장소에 파일 → 표에 기록.
  * 같은 일을 두 번 해도 한 줄만 남게 만든다(칸 사진은 같은 경로 덮어쓰기 + upsert, 추가 사진·영수증은 미리 정한 id).
  */
-export async function uploadOne(i: QueueItem): Promise<'ok' | 'retry' | 'drop'> {
+/** 'denied'는 서버가 거부한 것 — 정말 버릴지는 부르는 쪽이 resolveDrop으로 다시 확인한다 */
+export async function uploadOne(i: QueueItem): Promise<'ok' | 'retry' | 'drop' | 'denied'> {
   if (fileGone(i.localUri)) return 'drop';
   const { bucket, path } = storagePath(i);
   let body: ArrayBuffer;
@@ -26,7 +27,7 @@ export async function uploadOne(i: QueueItem): Promise<'ok' | 'retry' | 'drop'> 
 
   const up = await supabase.storage.from(bucket)
     .upload(path, body, { upsert: bucket === 'order-photos', contentType: 'image/jpeg' });
-  if (up.error && !isDuplicate(up.error as Err)) return classifyError(up.error as Err);
+  if (up.error && !isDuplicate(up.error as Err)) return classifyError(up.error as Err) === 'drop' ? 'denied' : 'retry';
 
   let rowErr: Err = null;
   if (i.kind === 'receipt') {
@@ -39,7 +40,7 @@ export async function uploadOne(i: QueueItem): Promise<'ok' | 'retry' | 'drop'> 
     ({ error: rowErr } = await supabase.from('order_photos').insert(
       { id: i.id, order_id: i.orderId, phase: i.phase, slot: null, path, taken_at: i.takenAt, lat: i.lat, lng: i.lng }));
   }
-  if (rowErr && !isDuplicate(rowErr)) return classifyError(rowErr);
+  if (rowErr && !isDuplicate(rowErr)) return classifyError(rowErr) === 'drop' ? 'denied' : 'retry';
   return 'ok';
 }
 

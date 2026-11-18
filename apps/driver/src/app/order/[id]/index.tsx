@@ -48,7 +48,8 @@ export default function OrderDetail() {
   if (!order) return <View style={{ flex: 1, backgroundColor: color.bg }} />;
 
   const photoPhase = order.status === 'driving' ? 'dropoff' : order.status === 'arrived_pickup' || order.status === 'assigned' ? 'pickup' : null;
-  const pendingUploads = photoPhase ? queue.pending(id, photoPhase) : 0;
+  // 이 오더의 모든 대기(칸·추가 사진, 영수증): 남은 채로 상태가 넘어가면 서버가 받지 않는다
+  const pendingUploads = photoPhase ? queue.pending(id) : 0;
   const action = nextAction(order.status, missing, pendingUploads);
   const canRelease = order.assigned_at && (order.status === 'assigned' || order.status === 'arrived_pickup');
   const releaseLeft = canRelease ? releaseRemainingMs(order.assigned_at!, order.kind, settings, now) : 0;

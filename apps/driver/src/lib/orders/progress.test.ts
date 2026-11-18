@@ -44,3 +44,8 @@ test('휴대폰 시계가 서버보다 늦어도 반납 시간은 정해진 분�
   const s = { release_min_takson: 10, release_min_daeri: 5 };
   expect(releaseRemainingMs('2026-11-17T03:00:00Z', 'takson', s, new Date('2026-11-17T02:59:55Z'))).toBe(600000);
 });
+
+test('도착 사진이 서버에 다 있어도 휴대폰에 올릴 사진·영수증이 남았으면 도착 완료 잠김', () => {
+  expect(nextAction('driving', { pickup: [], dropoff: [] }, 2))
+    .toEqual({ label: '도착 완료', enabled: false, hint: '업로드 대기 2장' });
+});

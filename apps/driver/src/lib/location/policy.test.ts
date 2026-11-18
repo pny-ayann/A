@@ -1,7 +1,7 @@
 import { expect, test, vi } from 'vitest';
 
 vi.mock('expo-location', () => ({ Accuracy: { Balanced: 3 } }));
-const { shouldTrackInBackground, LOCATION_OPTIONS } = await import('./policy');
+const { shouldTrackInBackground, shouldStopLocationTask, LOCATION_OPTIONS } = await import('./policy');
 
 const base = { hasSession: true, activeOrderCount: 1, permission: 'granted' as const };
 
@@ -25,4 +25,11 @@ test('항상 허용이 아니면 보내지 않는다', () => {
 test('화면이 꺼져 있고 차가 멈춰 있어도 1분마다 위치를 보낸다 (움직인 거리 조건 없음)', () => {
   expect(LOCATION_OPTIONS.timeInterval).toBe(60_000);
   expect(LOCATION_OPTIONS.distanceInterval).toBe(0);
+});
+
+test('화면 꺼짐 위치 작업: 신호가 없어 로그인 갱신만 실패했으면 멈추지 않고, 정말 로그아웃이면 멈춘다', () => {
+  expect(shouldStopLocationTask(true, null)).toBe(false);
+  expect(shouldStopLocationTask(false, { name: 'AuthRetryableFetchError' })).toBe(false);
+  expect(shouldStopLocationTask(false, null)).toBe(true);
+  expect(shouldStopLocationTask(false, { name: 'AuthApiError' })).toBe(true);
 });

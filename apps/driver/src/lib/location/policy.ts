@@ -30,3 +30,12 @@ export function shouldTrackInBackground(s: {
 }): boolean {
   return s.hasSession && s.activeOrderCount > 0 && s.permission === 'granted';
 }
+
+/**
+ * 화면 꺼짐 위치 작업이 스스로 멈출지. 신호가 없어 로그인 갱신만 실패한 경우(터널 등)는
+ * 멈추지 않고 다음 차례에 다시 해 본다. 정말 로그아웃됐거나 갱신이 거절됐을 때만 멈춘다.
+ */
+export function shouldStopLocationTask(hasSession: boolean, error: { name?: string } | null): boolean {
+  if (hasSession) return false;
+  return error?.name !== 'AuthRetryableFetchError';
+}

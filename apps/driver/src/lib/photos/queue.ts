@@ -70,3 +70,11 @@ export function classifyError(e: { message?: string; statusCode?: string | numbe
   if (/row-level security|permission denied|unauthorized/i.test(e.message ?? '')) return 'drop';
   return 'retry';
 }
+
+/**
+ * 권한 거부를 받았을 때 정말 버릴지. 신호가 나빠 로그인 갱신이 실패하면 익명으로 요청이 가서
+ * 거부되는데, 이때 버리면 차량 상태 증거가 사라진다. 로그인돼 있고 오더가 더는 내 것이 아닐 때만 버린다.
+ */
+export function resolveDrop(s: { hasSession: boolean; stillMine: boolean }): 'retry' | 'drop' {
+  return s.hasSession && !s.stillMine ? 'drop' : 'retry';
+}

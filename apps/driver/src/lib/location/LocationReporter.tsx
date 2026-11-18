@@ -1,5 +1,5 @@
 import * as Location from 'expo-location';
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { AppState, Platform } from 'react-native';
 import { useAuth } from '../auth/AuthProvider';
 import { myActiveOrders } from '../orders/useOrder';
@@ -58,6 +58,14 @@ export function LocationReporter({ children }: { children: ReactNode }) {
     return () => { alive = false; clearInterval(t); app.remove(); };
   }, [active, profile, readBackground]);
 
+  // 앱이 앞으로 올 때마다 작업이 멈춰 있지 않은지 다시 본다 (스스로 멈췄을 수 있음)
+  const [wake, setWake] = useState(0);
+  const applied = useRef(false);
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', s => { if (s === 'active') setWake(w => w + 1); });
+    return () => sub.remove();
+  }, []);
+
   // 화면 꺼짐 위치 작업 켜고 끄기
   useEffect(() => {
     if (Platform.OS === 'web') return;
@@ -65,9 +73,10 @@ export function LocationReporter({ children }: { children: ReactNode }) {
     void (async () => {
       try {
         const running = await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK);
-        // 이미 돌고 있어도 다시 시작해 앱 업데이트로 바뀐 설정을 반영한다
-        if (want) {
+        // 앱을 켠 뒤 첫 번째는 돌고 있어도 다시 시작해 앱 업데이트로 바뀐 설정을 반영하고, 그 뒤엔 멈춰 있을 때만 켠다
+        if (want && (!running || !applied.current)) {
           await Location.startLocationUpdatesAsync(LOCATION_TASK, { ...LOCATION_OPTIONS, foregroundService: FOREGROUND_SERVICE });
+          applied.current = true;
         } else if (!want && running) {
           await Location.stopLocationUpdatesAsync(LOCATION_TASK);
         }
@@ -75,7 +84,7 @@ export function LocationReporter({ children }: { children: ReactNode }) {
         // Expo Go 등 백그라운드 작업을 못 쓰는 환경: 앱 켜짐 보내기만 한다
       }
     })();
-  }, [active, activeCount, background]);
+  }, [active, activeCount, background, wake]);
 
   const requestBackground = useCallback(async () => {
     if (Platform.OS === 'web') return;
