@@ -44,7 +44,11 @@
         "asyncRoutes": {
           "web": true
         }
+      },
+      "eas": {
+        "projectId": "2d59a9ab-3ca1-4573-96f1-ec3f9cd2bb9f"
       }
-    }
+    },
+    "owner": "ayanny"
   }
 }
