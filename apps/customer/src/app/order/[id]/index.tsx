@@ -1,6 +1,8 @@
-import { useLocalSearchParams } from 'expo-router';
+import { errorMessage } from '@takson/shared';
+import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Linking, Text, View } from 'react-native';
+import { Alert, Linking, Platform, Text, View } from 'react-native';
+import { actionsFor } from '@/lib/orders/actions';
 import { ago, statusLabel } from '@/lib/orders/labels';
 import { useOrder, type Stop } from '@/lib/orders/useOrder';
 import { supabase } from '@/lib/supabase';
@@ -26,7 +28,9 @@ function StopBlock({ title, stop }: { title: string; stop: Stop }) {
 /** 오더 상세: 상태, 경로, 차량, 요금, 기사(전화·위치), 기록 */
 export default function OrderDetail() {
   const { id, warn } = useLocalSearchParams<{ id: string; warn?: string }>();
-  const { order, events, driver, missing } = useOrder(id);
+  const { order, events, driver, missing, reload } = useOrder(id);
+  const [busy, setBusy] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [loc, setLoc] = useState<{ lat: number; lng: number; updated_at: string } | null>(null);
   const [now, setNow] = useState(new Date());
 
@@ -43,6 +47,22 @@ export default function OrderDetail() {
 
   if (missing) return <Screen><Notice tone="danger">오더를 찾을 수 없어요.</Notice></Screen>;
   if (!order) return <Screen><Body sub>불러오는 중…</Body></Screen>;
+
+  const acts = actionsFor(order.status);
+
+  async function cancel() {
+    setActionError(null);
+    setBusy(true);
+    const { error } = await supabase.rpc('customer_cancel_order', { p_order_id: id });
+    setBusy(false);
+    if (error) setActionError(errorMessage(error.message));
+    void reload();
+  }
+  function askCancel() {
+    const msg = '이 오더를 취소할까요? 되돌릴 수 없어요.';
+    if (Platform.OS === 'web') { if (window.confirm(msg)) void cancel(); return; }
+    Alert.alert('오더 취소', msg, [{ text: '아니요', style: 'cancel' }, { text: '취소할게요', style: 'destructive', onPress: () => void cancel() }]);
+  }
 
   const stepIdx = STEPS.indexOf(order.status as (typeof STEPS)[number]);
   const statusEvents = events.filter(e => e.type === 'status' && e.to_status);
@@ -93,6 +113,11 @@ export default function OrderDetail() {
         {order.missions.length > 0 && <Body sub>미션: {order.missions.map(m => m.name).join(', ')}</Body>}
         {order.driver_memo && <Body sub>기사 메모: {order.driver_memo}</Body>}
       </Card>
+
+      {acts.edit && <BigButton label="수정" tone="plain" onPress={() => router.push(`/order/${id}/edit` as Href)} />}
+      {acts.amend && <BigButton label="변경 요청 (도착지·경유지·미션)" tone="plain" onPress={() => router.push(`/order/${id}/amend` as Href)} />}
+      {acts.cancel && <BigButton label="오더 취소" tone="danger" busy={busy} onPress={askCancel} />}
+      {actionError && <Notice tone="danger">{actionError}</Notice>}
 
       <Card>
         <Text style={{ fontSize: 14, color: color.sub, fontWeight: '700' }}>기록</Text>
