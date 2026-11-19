@@ -202,7 +202,7 @@ export default function NewOrder() {
           <Chip label="현금" on={form.paymentMethod === 'cash'} onPress={() => set({ paymentMethod: 'cash' })} />
         </View>
         <Body sub>{km !== null ? `거리 ${km}km · 자동 요금 ${fs.auto !== null ? won(fs.auto) : '-'}` : stops.some(p => !p.address) ? '주소를 다 고르면 요금이 계산돼요.' : routeFailed ? '' : '거리 계산 중…'}</Body>
-        {fs.note && <Notice>{fs.note}</Notice>}
+        {!!fs.note && <Notice>{fs.note}</Notice>}
         <Field label="요금 (원)" keyboardType="number-pad"
           value={fareText !== '' ? fareText : fs.fare !== null ? String(fs.fare) : ''}
           onChangeText={t => {
@@ -217,7 +217,7 @@ export default function NewOrder() {
         )}
       </Card>
 
-      {error && <Notice tone="danger">{error}</Notice>}
+      {!!error && <Notice tone="danger">{error}</Notice>}
       <BigButton label={fs.fare !== null ? `접수하기 · ${won(fs.fare)}` : '접수하기'} onPress={() => void submit()} busy={busy} />
     </Screen>
   );

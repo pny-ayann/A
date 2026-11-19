@@ -93,7 +93,7 @@ export default function Photos() {
       <Modal visible={!!open} transparent animationType="fade" onRequestClose={() => setOpen(null)}>
         <Pressable accessibilityRole="button" accessibilityLabel="닫기" onPress={() => setOpen(null)}
           style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center' }}>
-          {open && <Image source={{ uri: open }} style={{ width: '100%', height: '80%' }} resizeMode="contain" />}
+          {!!open && <Image source={{ uri: open }} style={{ width: '100%', height: '80%' }} resizeMode="contain" />}
           <Text style={{ color: '#fff', textAlign: 'center', fontSize: 16, marginTop: 12 }}>눌러서 닫기</Text>
         </Pressable>
       </Modal>

@@ -116,13 +116,13 @@ export default function Amend() {
       {reason && (
         <Card>
           {fs.auto !== null && <Body sub>새 자동 요금 {won(fs.auto)}{km !== null ? ` (${km}km)` : ''}</Body>}
-          {fs.note && <Notice>{fs.note}</Notice>}
+          {!!fs.note && <Notice>{fs.note}</Notice>}
           <Field label="새 요금 (원)" keyboardType="number-pad" value={fareText !== '' ? fareText : fs.fare !== null ? String(fs.fare) : ''}
             onChangeText={t => setFareText(t.replace(/[^0-9]/g, ''))} />
           <Body sub>바꾸면 기사님과 관제에 바로 알림이 가요.</Body>
         </Card>
       )}
-      {error && <Notice tone="danger">{error}</Notice>}
+      {!!error && <Notice tone="danger">{error}</Notice>}
       <BigButton label="변경 요청 보내기" onPress={() => void send()} busy={busy} disabled={!reason} />
     </Screen>
   );

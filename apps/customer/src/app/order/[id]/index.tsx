@@ -18,7 +18,7 @@ function StopBlock({ title, stop }: { title: string; stop: Stop }) {
     <View style={{ gap: 2 }}>
       <Text style={{ fontSize: 14, color: color.sub, fontWeight: '700' }}>{title}</Text>
       <Body>{stop.address}{stop.detail ? ` ${stop.detail}` : ''}</Body>
-      {(stop.contact_name || stop.contact_phone) && (
+      {!!(stop.contact_name || stop.contact_phone) && (
         <Body sub>{[stop.contact_name, stop.contact_phone].filter(Boolean).join(' · ')}</Body>
       )}
     </View>
@@ -78,7 +78,7 @@ export default function OrderDetail() {
     <Screen>
       <View style={{ gap: 4 }}>
         <Title>{statusLabel(order.status)}</Title>
-        {order.reserved_at && <Body style={{ color: color.warn, fontWeight: '700' }}>[예약] {kstShort(order.reserved_at)}</Body>}
+        {!!order.reserved_at && <Body style={{ color: color.warn, fontWeight: '700' }}>[예약] {kstShort(order.reserved_at)}</Body>}
       </View>
 
       {warn ? <Notice tone="danger">오더는 접수됐지만 {warn} 저장에 실패했어요. 관제에 문의해 주세요.</Notice> : null}
@@ -91,11 +91,11 @@ export default function OrderDetail() {
         </View>
       )}
 
-      {order.driver_id && (
+      {!!order.driver_id && (
         <Card>
           <Text style={{ fontSize: 14, color: color.sub, fontWeight: '700' }}>기사</Text>
           <Body>{driver?.name ?? '기사'}{driver?.phone ? ` · ${driver.phone}` : ''}</Body>
-          {driver?.phone && order.status !== 'completed' && (
+          {!!driver?.phone && order.status !== 'completed' && (
             <BigButton label="기사에게 전화" tone="plain" onPress={() => void Linking.openURL(`tel:${driver.phone}`)} />
           )}
           {running && (loc
@@ -113,12 +113,12 @@ export default function OrderDetail() {
 
       <Card>
         <Body>{order.kind === 'daeri' ? '대리' : '탁송'} · {order.vehicle_number ?? '차량번호 없음'}</Body>
-        {(order.vehicle_model || order.vehicle_color || order.transmission) && (
+        {!!(order.vehicle_model || order.vehicle_color || order.transmission) && (
           <Body sub>{[order.vehicle_model, order.vehicle_color, order.transmission === 'auto' ? '오토' : order.transmission === 'manual' ? '수동' : null].filter(Boolean).join(' · ')}</Body>
         )}
         <Body>{won(order.fare)} · {order.payment_method === 'cash' ? '현금' : '후불'}{order.distance_km ? ` · ${order.distance_km}km` : ''}</Body>
         {order.missions.length > 0 && <Body sub>미션: {order.missions.map(m => m.name).join(', ')}</Body>}
-        {order.driver_memo && <Body sub>기사 메모: {order.driver_memo}</Body>}
+        {!!order.driver_memo && <Body sub>기사 메모: {order.driver_memo}</Body>}
       </Card>
 
       <BigButton label={unread > 0 ? `관제에 문의 (새 메시지 ${unread})` : '관제에 문의'} onPress={() => router.push(`/order/${id}/chat` as Href)} />
@@ -128,7 +128,7 @@ export default function OrderDetail() {
       {acts.edit && <BigButton label="수정" tone="plain" onPress={() => router.push(`/order/${id}/edit` as Href)} />}
       {acts.amend && <BigButton label="변경 요청 (도착지·경유지·미션)" tone="plain" onPress={() => router.push(`/order/${id}/amend` as Href)} />}
       {acts.cancel && <BigButton label="오더 취소" tone="danger" busy={busy} onPress={askCancel} />}
-      {actionError && <Notice tone="danger">{actionError}</Notice>}
+      {!!actionError && <Notice tone="danger">{actionError}</Notice>}
 
       <Card>
         <Text style={{ fontSize: 14, color: color.sub, fontWeight: '700' }}>기록</Text>

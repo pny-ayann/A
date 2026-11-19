@@ -1,11 +1,12 @@
 import { subscribeAuthed, uniqueTopic, type OrderStatus } from '@takson/shared';
 import { router, useFocusEffect, type Href } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
+import { DeviceEventEmitter, FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { statusLabel } from '@/lib/orders/labels';
 import { splitTabs, type ListOrder } from '@/lib/orders/list';
+import { PUSH_RECEIVED } from '@/lib/push/PushSetup';
 import { supabase } from '@/lib/supabase';
 import { kstShort, won } from '@/lib/time';
 import { color } from '@/ui/kit';
@@ -56,6 +57,12 @@ export default function MyOrders() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `company_id=eq.${companyId}` }, () => void load())
       .subscribe());
   }, [companyId, load]);
+
+  // 알림이 오면(문의 등 실시간으로 안 오는 것까지) 다시 읽기
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener(PUSH_RECEIVED, () => void load());
+    return () => sub.remove();
+  }, [load]);
 
   const { active, done } = splitTabs(rows);
   const list = tab === 'active' ? active : done;

@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '@/lib/auth/AuthProvider';
+import { PushSetup } from '@/lib/push/PushSetup';
 import { color } from '@/ui/kit';
 
 function Gate() {
@@ -37,6 +38,7 @@ export default function RootLayout() {
       <AuthProvider>
         <StatusBar style="dark" />
         <Gate />
+        <PushSetup />
       </AuthProvider>
     </SafeAreaProvider>
   );

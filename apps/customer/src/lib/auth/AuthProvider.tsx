@@ -1,6 +1,7 @@
 import type { Session } from '@supabase/supabase-js';
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { supabase } from '../supabase';
+import { unregisterPushToken } from '../push/register';
 import { routeFor, type CustomerProfile, type Route } from './gate';
 
 type AuthState = {
@@ -54,7 +55,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     profile,
     companyName,
     route: routeFor(profile, !!session),
-    signOut: async () => { await supabase.auth.signOut(); },
+    // 로그아웃 전에 이 휴대폰의 알림 등록을 지운다 (다른 사람이 쓰면 앞사람 알림이 오지 않게)
+    signOut: async () => { await unregisterPushToken(); await supabase.auth.signOut(); },
   };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
