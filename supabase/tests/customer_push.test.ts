@@ -41,7 +41,7 @@ describe('고객 오더 알림', () => {
     expect(m[0]!.data).toEqual({ orderId: o, screen: 'order' });
   });
 
-  test('관제가 취소하면 알리고, 고객 스스로 취소하면 알리지 않는다', async () => {
+  test('관제가 취소하면 알리고, 고객이 스스로 취소하면 본인 말고 같은 업체 동료에게만 알린다', async () => {
     const o = await seedOrder(w.db, w.A, { status: 'assigned', driver_id: w.d });
     await clear();
     await as(w.db, w.op, tx => tx.query(`select staff_set_status($1, 'cancelled', '고객 요청')`, [o]));
@@ -50,7 +50,32 @@ describe('고객 오더 알림', () => {
     const o2 = await seedOrder(w.db, w.A);
     await clear();
     await as(w.db, w.a, tx => tx.query('select customer_cancel_order($1)', [o2]));
-    expect(await toCustomers()).toEqual([]);
+    const m = await toCustomers();
+    expect(tokens(m)).toEqual(['C_a2']);
+    expect(m[0]).toMatchObject({ title: '오더가 취소됐어요 · cust_a', data: { orderId: o2, screen: 'order' } });
+  });
+
+  test('관제가 배차됨에서 바로 운행 중으로 바꿔도 출발 알림', async () => {
+    const o = await seedOrder(w.db, w.A, { status: 'assigned', driver_id: w.d });
+    await clear();
+    await w.db.query(`update orders set status = 'driving' where id = $1`, [o]);
+    expect((await toCustomers()).map(m => m.title)).toEqual(['출발했어요', '출발했어요']);
+  });
+
+  test('관제가 다른 기사로 바꾸면 새 기사 이름으로 알린다', async () => {
+    const o = await seedOrder(w.db, w.A, { status: 'assigned', driver_id: w.d });
+    await clear();
+    await as(w.db, w.op, tx => tx.query('select staff_assign($1, $2)', [o, w.d2]));
+    const m = await toCustomers();
+    expect(tokens(m)).toEqual(['C_a', 'C_a2']);
+    expect(m[0]).toMatchObject({ title: '기사가 바뀌었어요 · 박기사', data: { orderId: o, screen: 'order' } });
+  });
+
+  test('회수(배정 해제)는 기사 변경 알림이 아니다', async () => {
+    const o = await seedOrder(w.db, w.A, { status: 'assigned', driver_id: w.d });
+    await clear();
+    await as(w.db, w.op, tx => tx.query('select staff_unassign($1, $2)', [o, '연락 안 됨']));
+    expect((await toCustomers()).filter(m => m.title.startsWith('기사가 바뀌었어요'))).toEqual([]);
   });
 
   test('상태가 그대로인 요금 변경이나 다른 수정은 고객에게 보내지 않는다', async () => {
