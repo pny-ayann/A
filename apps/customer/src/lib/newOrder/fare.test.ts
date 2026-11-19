@@ -51,3 +51,19 @@ describe('amendDefaultFare: 배차 후 변경 요금 기본값은 지금 요금�
     expect(amendDefaultFare({ current: 50000, reason: 'dropoff_change', missionExtra: null, oldAuto: 35000, newAuto: null })).toBeNull();
   });
 });
+
+describe('submitWait: 거리 계산 중에 접수를 누르면 기다려 달라고 한다', async () => {
+  const { submitWait } = await import('./fare');
+  const p = (lat: number | null) => ({ address: 'x', lat, lng: lat });
+  test('주소·좌표가 다 있고 거리·실패 둘 다 아직이면 계산 중', () => {
+    expect(submitWait({ stops: [p(1), p(2)], km: null, routeFailed: false, edited: null })).toBe('거리를 계산하고 있어요. 잠깐만 기다려 주세요.');
+  });
+  test('요금을 직접 넣었으면 기다리지 않는다', () => {
+    expect(submitWait({ stops: [p(1), p(2)], km: null, routeFailed: false, edited: 30000 })).toBeNull();
+  });
+  test('거리를 구했거나 실패했거나 주소가 비었으면 기다리지 않는다', () => {
+    expect(submitWait({ stops: [p(1), p(2)], km: 10, routeFailed: false, edited: null })).toBeNull();
+    expect(submitWait({ stops: [p(1), p(2)], km: null, routeFailed: true, edited: null })).toBeNull();
+    expect(submitWait({ stops: [p(1), { address: '', lat: null, lng: null }], km: null, routeFailed: false, edited: null })).toBeNull();
+  });
+});

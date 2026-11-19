@@ -1,6 +1,6 @@
 import { subscribeAuthed, uniqueTopic, type OrderStatus } from '@takson/shared';
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../supabase';
 
 export type Stop = {
@@ -35,8 +35,12 @@ export function useOrder(id: string) {
   const [driver, setDriver] = useState<Driver | null>(null);
   const [missing, setMissing] = useState(false);
 
+  // 실시간 알림 하나에 여러 번 다시 읽을 수 있다. 늦게 끝난 옛 읽기가 새 화면을 덮지 않게 마지막 것만 쓴다
+  const seq = useRef(0);
   const load = useCallback(async () => {
+    const mine = ++seq.current;
     const { data: r, error } = await supabase.from('orders').select('*').eq('id', id).maybeSingle();
+    if (mine !== seq.current) return;
     if (error) return; // 신호 문제: 화면은 그대로 두고 다음에
     if (!r) { setMissing(true); return; }
     const [wps, ms, ev, dr] = await Promise.all([
@@ -45,6 +49,7 @@ export function useOrder(id: string) {
       supabase.from('order_events').select('id, type, from_status, to_status, reason, data, created_at').eq('order_id', id).order('created_at'),
       r.driver_id ? supabase.from('profiles').select('name, phone').eq('id', r.driver_id).maybeSingle() : Promise.resolve({ data: null }),
     ]);
+    if (mine !== seq.current) return;
     setOrder({
       ...(r as unknown as Order),
       pickup: stopOf(r, 'pickup'),

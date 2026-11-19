@@ -18,7 +18,7 @@ if (Platform.OS !== 'web') {
   });
 }
 
-/** 로그인한 기사의 푸시 등록 + 알림을 누르면 해당 화면으로 */
+/** 로그인한 고객의 푸시 등록 + 알림을 누르면 해당 화면으로 */
 export function PushSetup() {
   const { route } = useAuth();
   const home = route === 'home';

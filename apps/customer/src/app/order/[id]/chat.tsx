@@ -12,7 +12,7 @@ import { color, Notice } from '@/ui/kit';
 type Message = { id: string; sender_id: string; body: string; created_at: string };
 const COLS = 'id, sender_id, body, created_at';
 
-/** 관제와 주고받는 이 오더의 '기사 문의' 대화. 실시간, 열어 두면 읽음 처리 */
+/** 관제와 주고받는 이 오더의 '고객 문의' 대화 (고객↔관제). 실시간, 열어 두면 읽음 처리 */
 export default function Chat() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { profile } = useAuth();

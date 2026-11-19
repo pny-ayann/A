@@ -1,6 +1,6 @@
 import type { Place } from '@takson/shared';
 import { router, type Href } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { geocode } from '@/lib/kakao';
 import { onAddressPicked } from '@/lib/newOrder/pick';
@@ -15,14 +15,18 @@ export function PlaceInput({ title, value, onChange, top, onRemove }: {
   onRemove?: () => void;
 }) {
   const [finding, setFinding] = useState(false);
+  // 위치를 찾는 1~3초 사이 고객이 상세주소·연락처를 적을 수 있으니, 찾은 뒤에는 그때의 최신 값에 좌표만 붙인다
+  const latest = useRef(value);
+  latest.current = value;
 
   function search() {
     onAddressPicked(async address => {
       setFinding(true);
-      onChange({ ...value, address, area: null, lat: null, lng: null });
+      onChange({ ...latest.current, address, area: null, lat: null, lng: null });
       const g = await geocode(address);
       setFinding(false);
-      onChange({ ...value, address, area: g?.area ?? null, lat: g?.lat ?? null, lng: g?.lng ?? null });
+      if (latest.current.address !== address) return; // 그 사이 다른 주소를 골랐으면 버린다
+      onChange({ ...latest.current, area: g?.area ?? null, lat: g?.lat ?? null, lng: g?.lng ?? null });
     });
     router.push('/address-search' as Href);
   }

@@ -3,25 +3,19 @@ import {
   type FareBand, type OrderForm, type Place,
 } from '@takson/shared';
 import { router, useFocusEffect, type Href } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { PlaceInput } from '@/components/PlaceInput';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { routeKm } from '@/lib/kakao';
-import { fareState } from '@/lib/newOrder/fare';
-import { kstInputToIso } from '@/lib/newOrder/reserve';
+import { fareState, submitWait } from '@/lib/newOrder/fare';
+import { defaultReserve, kstInputToIso } from '@/lib/newOrder/reserve';
 import { supabase } from '@/lib/supabase';
-import { kstParts, won } from '@/lib/time';
+import { won } from '@/lib/time';
 import { BigButton, Body, Card, color, Field, Notice, Screen, Title } from '@/ui/kit';
 
 type Mission = { id: string; name: string; extra_fare: number };
 
-const pad = (n: number) => String(n).padStart(2, '0');
-/** 지금부터 1시간 뒤(한국 시간)를 예약 입력 기본값으로 */
-function defaultReserve(): { date: string; time: string } {
-  const p = kstParts(new Date(Date.now() + 3600_000));
-  return { date: `${p.y}-${pad(p.m)}-${pad(p.d)}`, time: `${pad(p.hh)}:00` };
-}
 
 function Chip({ label, on, onPress }: { label: string; on: boolean; onPress: () => void }) {
   return (
@@ -54,8 +48,9 @@ export default function NewOrder() {
   const [routeFailed, setRouteFailed] = useState(false);
   const [edited, setEdited] = useState<number | null>(null);
   const [fareText, setFareText] = useState('');
-  const [reserve, setReserve] = useState<{ on: boolean; date: string; time: string }>({ on: false, ...defaultReserve() });
+  const [reserve, setReserve] = useState<{ on: boolean; date: string; time: string }>({ on: false, ...defaultReserve(new Date()) });
   const [busy, setBusy] = useState(false);
+  const payTouched = useRef(false);
   const [error, setError] = useState<string | null>(null);
 
   const set = (patch: Partial<OrderForm>) => setForm(f => ({ ...f, ...patch }));
@@ -74,7 +69,8 @@ export default function NewOrder() {
       setMissions((m.data ?? []) as Mission[]);
       const pay = (c.data as { default_payment: 'cash' | 'postpaid' } | null)?.default_payment ?? 'postpaid';
       setDefaultPay(pay);
-      setForm(f => (f.pickup.address || f.dropoff.address ? f : { ...f, paymentMethod: pay, companyId }));
+      // 고객이 결제 방법을 직접 고른 뒤에는 업체 기본값으로 되돌리지 않는다
+      setForm(f => (payTouched.current ? { ...f, companyId } : { ...f, paymentMethod: pay, companyId }));
       setTop(((t.data ?? []) as Record<string, unknown>[]).map(a => ({
         address: String(a.address ?? ''), detail: String(a.detail ?? ''), area: (a.area as string | null) ?? null,
         lat: (a.lat as number | null) ?? null, lng: (a.lng as number | null) ?? null,
@@ -105,6 +101,8 @@ export default function NewOrder() {
 
   async function submit() {
     setError(null);
+    const wait = submitWait({ stops, km, routeFailed, edited });
+    if (wait) { setError(wait); return; }
     let reservedAt: string | null = null;
     if (reserve.on) {
       reservedAt = kstInputToIso(reserve.date, reserve.time);
@@ -124,7 +122,8 @@ export default function NewOrder() {
     if (e || !data) { setError(errorMessage(e?.message ?? '')); return; }
     const orderId = data as string;
     setForm(blankForm(companyId, defaultPay));
-    setEdited(null); setFareText(''); setReserve({ on: false, ...defaultReserve() });
+    setEdited(null); setFareText(''); setReserve({ on: false, ...defaultReserve(new Date()) });
+    payTouched.current = false;
     router.push(`/order/${orderId}` as Href);
   }
 
@@ -175,7 +174,7 @@ export default function NewOrder() {
       <Card>
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <Chip label="바로" on={!reserve.on} onPress={() => setReserve(r => ({ ...r, on: false }))} />
-          <Chip label="예약" on={reserve.on} onPress={() => setReserve(r => ({ ...r, on: true }))} />
+          <Chip label="예약" on={reserve.on} onPress={() => setReserve(r => (r.on ? r : { on: true, ...defaultReserve(new Date()) }))} />
         </View>
         {reserve.on && (
           <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -187,8 +186,8 @@ export default function NewOrder() {
 
       <Card>
         <View style={{ flexDirection: 'row', gap: 8 }}>
-          <Chip label="후불" on={form.paymentMethod === 'postpaid'} onPress={() => set({ paymentMethod: 'postpaid' })} />
-          <Chip label="현금" on={form.paymentMethod === 'cash'} onPress={() => set({ paymentMethod: 'cash' })} />
+          <Chip label="후불" on={form.paymentMethod === 'postpaid'} onPress={() => { payTouched.current = true; set({ paymentMethod: 'postpaid' }); }} />
+          <Chip label="현금" on={form.paymentMethod === 'cash'} onPress={() => { payTouched.current = true; set({ paymentMethod: 'cash' }); }} />
         </View>
         <Body sub>{km !== null ? `거리 ${km}km · 자동 요금 ${fs.auto !== null ? won(fs.auto) : '-'}` : stops.some(p => !p.address) ? '주소를 다 고르면 요금이 계산돼요.' : routeFailed ? '' : '거리 계산 중…'}</Body>
         {!!fs.note && <Notice>{fs.note}</Notice>}

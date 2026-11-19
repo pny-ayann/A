@@ -43,7 +43,7 @@ export default function MyOrders() {
     for (const r of (ur.data ?? []) as { order_id: string; thread: string; unread: number }[]) if (r.thread === 'customer') u[r.order_id] = r.unread;
     setUnread(u);
     setLoading(false);
-    if (recent.error && running.error) return; // 신호 문제: 지금 목록 유지
+    if (recent.error || running.error) return; // 신호 문제: 하나라도 실패하면 지금 목록 유지 (끝난 오더 탭이 비지 않게)
     const map = new Map<string, Row>();
     for (const r of [...(recent.data ?? []), ...(running.data ?? [])] as Row[]) map.set(r.id, r);
     setRows([...map.values()]);
