@@ -8,6 +8,7 @@ const messages: Record<string, string> = {
   PHOTOS_REQUIRED: '필수 사진 5장을 모두 올려 주세요.',
   INVALID_TRANSITION: '지금 상태에서는 할 수 없는 작업이에요.',
   REASON_REQUIRED: '사유를 입력해 주세요.',
+  INVALID_MISSION: '꺼진 미션이 있어요. 다시 골라 주세요.',
   INVALID_AMENDMENT: '도착지 변경, 경유지 추가, 미션 추가일 때만 바꿀 수 있어요.',
   CANCEL_NOT_ALLOWED: '배차된 오더는 관제에 문의해서 취소해 주세요.',
   FORBIDDEN: '권한이 없어요.',

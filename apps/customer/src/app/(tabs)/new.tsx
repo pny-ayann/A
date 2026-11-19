@@ -114,29 +114,18 @@ export default function NewOrder() {
     const problem = validateOrderForm(f, new Date());
     if (problem) { setError(problem); return; }
     setBusy(true);
-    // 미션 추가요금은 화면 값이 아니라 서버에 있는 값으로 기록 (관제 웹과 같음)
-    let ms: Mission[] = [];
-    if (f.missionIds.length) {
-      const m = await supabase.from('missions').select('id, name, extra_fare').in('id', f.missionIds).eq('active', true);
-      if (m.error || m.data.length !== new Set(f.missionIds).size) { setBusy(false); setError('꺼진 미션이 있어요. 다시 골라 주세요.'); return; }
-      ms = m.data as Mission[];
-    }
-    const ins = await supabase.from('orders').insert(toOrderInsert(f)).select('id').single();
-    if (ins.error || !ins.data) { setBusy(false); setError(errorMessage(ins.error?.message ?? '') || '오더를 접수하지 못했어요. 잠시 뒤 다시 해 주세요.'); return; }
-    const orderId = ins.data.id as string;
-    const problems: string[] = [];
-    if (f.waypoints.length) {
-      const w = await supabase.from('order_waypoints').insert(toWaypointRows(orderId, f.waypoints));
-      if (w.error) problems.push('경유지');
-    }
-    if (ms.length) {
-      const r = await supabase.from('order_missions').insert(ms.map(m => ({ order_id: orderId, mission_id: m.id, extra_fare: m.extra_fare })));
-      if (r.error) problems.push('미션');
-    }
+    // 오더·경유지·미션을 서버에서 한 번에 저장 (중간에 끊겨도 반쪽 오더가 남지 않음, 미션 요금은 서버 값)
+    const { data, error: e } = await supabase.rpc('create_order', {
+      p_order: toOrderInsert(f),
+      p_waypoints: toWaypointRows('', f.waypoints),
+      p_mission_ids: f.missionIds,
+    });
     setBusy(false);
+    if (e || !data) { setError(errorMessage(e?.message ?? '')); return; }
+    const orderId = data as string;
     setForm(blankForm(companyId, defaultPay));
     setEdited(null); setFareText(''); setReserve({ on: false, ...defaultReserve() });
-    router.push(`/order/${orderId}${problems.length ? `?warn=${encodeURIComponent(problems.join('·'))}` : ''}` as Href);
+    router.push(`/order/${orderId}` as Href);
   }
 
   return (
