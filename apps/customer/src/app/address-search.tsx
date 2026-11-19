@@ -25,21 +25,42 @@ function done(address: string) {
   router.back();
 }
 
+/** 주소를 직접 적는 칸 (웹 확인용, 휴대폰에서는 검색이 안 될 때 대신 쓰기) */
+function TypeIn({ note }: { note: string }) {
+  const [typed, setTyped] = useState('');
+  return (
+    <>
+      <Body sub>{note}</Body>
+      <Field label="주소" value={typed} onChangeText={setTyped} placeholder="예: 서울 강남구 테헤란로 152" onSubmitEditing={() => done(typed)} />
+      <BigButton label="이 주소로" onPress={() => done(typed)} disabled={!typed.trim()} />
+    </>
+  );
+}
+
 /** 주소 검색 (휴대폰: 우편번호 검색 화면 / 웹 개발 확인용: 주소를 직접 입력) */
 export default function AddressSearch() {
-  const [typed, setTyped] = useState('');
+  const [manual, setManual] = useState(false);
   if (Platform.OS === 'web') {
-    return (
-      <Screen>
-        <Body sub>웹 확인용: 도로명이나 지번 주소를 그대로 입력해 주세요.</Body>
-        <Field label="주소" value={typed} onChangeText={setTyped} placeholder="예: 서울 강남구 테헤란로 152" onSubmitEditing={() => done(typed)} />
-        <BigButton label="이 주소로" onPress={() => done(typed)} disabled={!typed.trim()} />
-      </Screen>
-    );
+    return <Screen><TypeIn note="웹 확인용: 도로명이나 지번 주소를 그대로 입력해 주세요." /></Screen>;
+  }
+  if (manual) {
+    return <Screen><TypeIn note="도로명이나 지번 주소를 그대로 입력해 주세요." /></Screen>;
   }
   return (
     <View style={{ flex: 1 }}>
-      <WebView originWhitelist={['*']} source={{ html: HTML }} onMessage={e => done(e.nativeEvent.data)} />
+      {/* baseUrl이 없으면 검색 결과를 눌러도 선택 신호가 앱까지 오지 않는다 (about:blank 출처) */}
+      <WebView
+        originWhitelist={['*']}
+        source={{ html: HTML, baseUrl: 'https://postcode.map.daum.net' }}
+        javaScriptEnabled
+        domStorageEnabled
+        setSupportMultipleWindows={false}
+        mixedContentMode="compatibility"
+        onMessage={e => done(e.nativeEvent.data)}
+      />
+      <View style={{ padding: 12 }}>
+        <BigButton label="검색이 안 되면: 주소 직접 입력" tone="plain" onPress={() => setManual(true)} />
+      </View>
     </View>
   );
 }
