@@ -1,10 +1,10 @@
-import { emptyPlace, errorMessage, type AmendReason, type FareBand, type Place } from '@takson/shared';
+import { calcFare, emptyPlace, errorMessage, type AmendReason, type FareBand, type Place } from '@takson/shared';
 import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, Text } from 'react-native';
+import { Alert, Platform, Pressable, Text } from 'react-native';
 import { PlaceInput } from '@/components/PlaceInput';
 import { routeKm } from '@/lib/kakao';
-import { fareState } from '@/lib/newOrder/fare';
+import { amendDefaultFare, fareState } from '@/lib/newOrder/fare';
 import { amendPayload } from '@/lib/orders/actions';
 import { useOrder, type Stop } from '@/lib/orders/useOrder';
 import { supabase } from '@/lib/supabase';
@@ -81,12 +81,30 @@ export default function Amend() {
   const have = new Set(order.missions.map(m => m.id));
   const extras = [...order.missions.map(m => m.extra_fare), ...(reason === 'mission_added' && missionId ? [missions.find(m => m.id === missionId)?.extra_fare ?? 0] : [])];
   const edited = fareText === '' ? null : Number(fareText);
-  const fs = fareState({ km, routeFailed, bands, missionExtras: extras, edited });
+  const fs = fareState({ km, routeFailed, bands, missionExtras: extras, edited: null });
+  const oldAuto = order.distance_km !== null && bands.length
+    ? calcFare(order.distance_km, bands, order.missions.map(m => m.extra_fare)) : null;
+  const suggested = reason ? amendDefaultFare({
+    current: order.fare, reason,
+    missionExtra: missionId ? missions.find(m => m.id === missionId)?.extra_fare ?? 0 : null,
+    oldAuto, newAuto: fs.auto,
+  }) : null;
+  const fare = edited ?? suggested;
 
   async function send() {
     setError(null);
-    const p = amendPayload({ reason, fare: fs.fare, place, missionId });
+    const p = amendPayload({ reason, fare, place, missionId });
     if (typeof p === 'string') { setError(p); return; }
+    if (p.p_fare < order!.fare) {
+      const msg = `요금이 ${won(order!.fare)}에서 ${won(p.p_fare)}으로 내려가요. 이대로 보낼까요?`;
+      const ok = Platform.OS === 'web'
+        ? window.confirm(msg)
+        : await new Promise<boolean>(res => Alert.alert('요금 확인', msg, [
+            { text: '다시 볼게요', style: 'cancel', onPress: () => res(false) },
+            { text: '보낼게요', onPress: () => res(true) },
+          ], { cancelable: true, onDismiss: () => res(false) }));
+      if (!ok) return;
+    }
     setBusy(true);
     const { error: e } = await supabase.rpc('customer_amend_order', { p_order_id: id, ...p });
     setBusy(false);
@@ -117,7 +135,8 @@ export default function Amend() {
         <Card>
           {fs.auto !== null && <Body sub>새 자동 요금 {won(fs.auto)}{km !== null ? ` (${km}km)` : ''}</Body>}
           {!!fs.note && <Notice>{fs.note}</Notice>}
-          <Field label="새 요금 (원)" keyboardType="number-pad" value={fareText !== '' ? fareText : fs.fare !== null ? String(fs.fare) : ''}
+          {fare !== null && <Body>{won(order.fare)} → {won(fare)}</Body>}
+          <Field label="새 요금 (원)" keyboardType="number-pad" value={fareText !== '' ? fareText : suggested !== null ? String(suggested) : ''}
             onChangeText={t => setFareText(t.replace(/[^0-9]/g, ''))} />
           <Body sub>바꾸면 기사님과 관제에 바로 알림이 가요.</Body>
         </Card>

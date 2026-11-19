@@ -19,3 +19,22 @@ export function fareState(s: FareInput): { fare: number | null; auto: number | n
   const auto = calcFare(s.km, s.bands, s.missionExtras);
   return { fare: s.edited ?? auto, auto, note: null };
 }
+
+/**
+ * 배차 후 변경 요청의 요금 기본값 (고객이 고칠 수 있음).
+ * 협의·수정된 지금 요금을 덮어쓰지 않도록, 지금 요금에 '바뀐 만큼'만 더하거나 뺀다.
+ * - 미션 추가: 지금 요금 + 미션 추가요금
+ * - 경로 변경: 지금 요금 + (새 자동 요금 − 예전 자동 요금). 예전 값을 모르면 지금 요금 아래로 내리지 않는다.
+ */
+export function amendDefaultFare(a: {
+  current: number;
+  reason: 'dropoff_change' | 'waypoint_added' | 'mission_added';
+  missionExtra: number | null;
+  oldAuto: number | null;
+  newAuto: number | null;
+}): number | null {
+  if (a.reason === 'mission_added') return a.missionExtra === null ? null : a.current + a.missionExtra;
+  if (a.newAuto === null) return null;
+  if (a.oldAuto === null) return Math.max(a.current, a.newAuto);
+  return Math.max(0, a.current + a.newAuto - a.oldAuto);
+}
