@@ -8,10 +8,13 @@ import { logout } from '../login/actions';
 const staffMenu = [
   { href: '/orders', label: '오더 관제판' },
   { href: '/orders/new', label: '오더 접수' },
+  { href: '/fuel', label: '주유비 청구' },
 ];
 const adminMenu = [
   { href: '/admin/companies', label: '업체 관리' },
   { href: '/admin/drivers', label: '기사 관리' },
+  { href: '/admin/wallets', label: '충전금' },
+  { href: '/admin/withdrawals', label: '출금 신청' },
   { href: '/admin/staff', label: '직원 계정' },
   { href: '/admin/fares', label: '요금표·미션' },
   { href: '/admin/settings', label: '운영 설정' },
