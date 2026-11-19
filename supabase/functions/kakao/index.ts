@@ -1,8 +1,8 @@
 // 휴대폰 앱용 카카오 중계: 카카오 REST 키를 앱에 넣지 않고 여기(Supabase 비밀값 KAKAO_REST_KEY)에만 둔다.
-// 로그인한 사용자만 부를 수 있다 (Supabase 기본 verify_jwt).
+// 로그인한 사용자만 부를 수 있고 (Supabase 기본 verify_jwt), 그중 고객·관제만 쓸 수 있다 (가입만 한 기사 계정 막기).
 // POST { op: 'geocode', query } → { area, lat, lng } | null
 // POST { op: 'route', points: [{lat,lng}, ...] } → { km: number | null }
-import { checkRequest, directionsUrl, geocodeUrl, parseAddress, parseDirections, type KakaoRequest } from '../_shared/kakao.ts';
+import { allowedRole, checkRequest, directionsUrl, geocodeUrl, parseAddress, parseDirections, type KakaoRequest } from '../_shared/kakao.ts';
 
 // 브라우저(웹 확인용)에서 부를 때 필요한 CORS 머리글. 휴대폰 앱은 상관없다.
 const CORS = {
@@ -19,6 +19,17 @@ Deno.serve(async req => {
   if (req.method !== 'POST') return json({ error: 'POST만 돼요.' }, 405);
   const key = Deno.env.get('KAKAO_REST_KEY');
   if (!key) return json({ error: 'NO_KEY' }, 500);
+  // 부른 사람의 역할을 그 사람 로그인 그대로 물어본다 (my_role RPC). 고객·관제만 통과.
+  const role = await fetch(`${Deno.env.get('SUPABASE_URL')}/rest/v1/rpc/my_role`, {
+    method: 'POST',
+    headers: {
+      apikey: Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      Authorization: req.headers.get('Authorization') ?? '',
+      'Content-Type': 'application/json',
+    },
+    body: '{}',
+  }).then(r => (r.ok ? r.json() : null)).catch(() => null);
+  if (!allowedRole(role)) return json({ error: 'FORBIDDEN' }, 403);
   const body: unknown = await req.json().catch(() => null);
   const problem = checkRequest(body);
   if (problem) return json({ error: problem }, 400);

@@ -41,3 +41,13 @@ test('요청 검사: 이상한 요청은 이유를 돌려준다', () => {
   expect(checkRequest({ op: 'route', points: [p, { lat: 999, lng: 127 }] })).toBeTypeOf('string');
   expect(checkRequest({ op: 'route', points: [p, { lat: '37', lng: 127 }] })).toBeTypeOf('string');
 });
+
+test('allowedRole: 고객·관제만 카카오 중계를 쓸 수 있다 (가입만 한 기사·알 수 없음은 거절)', async () => {
+  const { allowedRole } = await import('./kakao');
+  expect(allowedRole('customer')).toBe(true);
+  expect(allowedRole('staff')).toBe(true);
+  expect(allowedRole('driver')).toBe(false);
+  expect(allowedRole(null)).toBe(false);
+  expect(allowedRole(undefined)).toBe(false);
+  expect(allowedRole('')).toBe(false);
+});

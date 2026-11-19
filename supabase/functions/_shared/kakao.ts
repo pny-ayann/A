@@ -65,3 +65,8 @@ export function directionsUrl(points: LatLng[]): string {
 export function geocodeUrl(query: string): string {
   return `https://dapi.kakao.com/v2/local/search/address.json?size=1&query=${encodeURIComponent(query)}`;
 }
+
+/** 카카오 중계를 쓸 수 있는 역할: 고객(오더 접수)과 관제만. 누구나 가입할 수 있는 기사 계정은 막는다(키 사용량 보호). */
+export function allowedRole(role: unknown): boolean {
+  return role === 'customer' || role === 'staff';
+}
