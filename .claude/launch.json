@@ -25,6 +25,17 @@
         "8081"
       ],
       "port": 8081
+    },
+    {
+      "name": "customer-web",
+      "runtimeExecutable": "npm.cmd",
+      "runtimeArgs": [
+        "run",
+        "web",
+        "-w",
+        "@takson/customer"
+      ],
+      "port": 8083
     }
   ]
 }

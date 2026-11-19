@@ -134,6 +134,60 @@ npx.cmd eas-cli build -p android --profile development
 - 위치: 배차된 오더가 있을 때 앱이 '항상 허용'을 부탁해요. 허용하면 화면이 꺼져도 1분마다 위치를 보내고, 알림창에 "탁송 운행 중" 알림이 떠요. 오더가 끝나면 사라져요.
 - 알림: 처음 로그인할 때 허용해요. 로그아웃하면 이 휴대폰으로 알림이 더 오지 않아요.
 
+## 7. 고객 앱 켜기
+
+고객(업체) 계정으로 오더를 접수하고, 진행 상황·기사 위치·사진을 보고, 관제와 대화하는 앱이에요. 위치는 `apps/customer`, 안드로이드 패키지는 `com.takson.customer`예요.
+
+### 7-1. 연결 정보
+
+`apps/customer/.env.example`을 같은 폴더에 `.env`로 복사하고, 4번의 Project URL과 anon public key를 넣어요. (이 파일은 GitHub에 올라가지 않아요)
+
+### 7-2. 카카오 주소·거리 (서버 함수)
+
+주소 → 좌표, 거리 계산은 카카오 REST 키가 필요해서, 키를 앱에 넣지 않고 Supabase 함수 `kakao`가 대신 불러요.
+
+- 키는 Supabase 비밀값 `KAKAO_REST_KEY`로 넣어요. **키 값을 채팅이나 GitHub에 올리지 마세요.**
+- 함수를 고쳤을 때 다시 올리기 (저장소 루트에서):
+
+```bash
+npx.cmd supabase functions deploy kakao --use-api
+```
+
+### 7-3. 화면만 빨리 보기 (브라우저)
+
+```bash
+npm run web -w @takson/customer
+```
+
+http://localhost:8083 에서 열려요. 브라우저에서는 주소 검색 창 대신 주소를 직접 적는 칸이 나오고, 알림은 오지 않아요.
+
+### 7-4. 휴대폰에서 개발하며 보기 (개발용 앱)
+
+기사 앱(6-3)과 같아요. 설치한 '탁송 고객' 개발용 앱을 열고, `apps/customer` 폴더에서 실행해요. (기사 앱과 동시에 켤 수 있게 포트를 다르게 써요)
+
+```bash
+npx.cmd expo start --dev-client --port 8084
+```
+
+### 7-5. 설치 파일(APK) 새로 만들기
+
+처음 한 번 준비는 끝나 있어요: Expo 프로젝트 `takson-customer`, 파일 환경변수 `GOOGLE_SERVICES_JSON`(development·preview), 푸시용 FCM V1 키.
+같은 Firebase 프로젝트 `takson`의 `google-services.json`에 기사·고객 두 앱이 다 들어 있어요. 이 파일과 서비스 계정 키는 GitHub에 올리지 않아요.
+
+`apps/customer` 폴더에서:
+
+```bash
+npx.cmd eas-cli build -p android --profile development
+```
+
+`preview`(PC 없이 혼자 도는 시험용)를 만들 때는 6-4처럼 EAS preview 환경변수에 `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`를 먼저 넣어야 해요.
+
+### 7-6. 고객에게 오는 알림
+
+- 배차됐어요 · 기사 이름 / 출발했어요 / 도착 완료 / 관제가 오더를 취소했어요 → 누르면 그 오더 화면
+- 관제 메시지 → 누르면 대화 화면 (메시지 내용은 잠금화면에 보이지 않게 넣지 않아요)
+- 같은 업체 고객 계정 모두에게 가요. 본인이 한 일(예: 직접 취소)은 본인에게 보내지 않아요.
+
 ## 개발자용 메모
 
 - 테스트: 저장소 루트에서 `npm test`. Docker 없이 PGlite로 실제 마이그레이션을 돌려 검사해요.

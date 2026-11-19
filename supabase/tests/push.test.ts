@@ -16,6 +16,8 @@ const requests = async () =>
 const sent = async () => (await requests()).flatMap(r => r.body);
 const clear = () => w.db.query('delete from net.http_requests_log');
 const tokens = (ms: Msg[]) => ms.map(m => m.to).sort();
+/** 고객 알림(0015, customer_push.test.ts에서 따로 검사)을 뺀 기사·관제 쪽 알림 */
+const notToCustomer = async () => (await sent()).filter(m => m.to !== 'T_a');
 
 describe('새 오더', () => {
   test('공개 오더가 생기면 승인된 기사 모두에게 한 번에 보낸다', async () => {
@@ -50,13 +52,13 @@ describe('기사 개인 알림', () => {
     const o = await seedOrder(w.db, w.A);
     await clear();
     await as(w.db, w.d, tx => tx.query('select claim_order($1, null, null)', [o]));
-    expect(await requests()).toEqual([]);
+    expect(await notToCustomer()).toEqual([]);
   });
 
   test('관제가 배정하면 그 기사에게 배차 알림', async () => {
     const o = await seedOrder(w.db, w.A, { dispatch_mode: 'staff_only' });
     await as(w.db, w.op, tx => tx.query('select staff_assign($1, $2)', [o, w.d2]));
-    const m = await sent();
+    const m = await notToCustomer();
     expect(tokens(m)).toEqual(['T_d2']);
     expect(m[0]).toMatchObject({ title: '배차됐어요', data: { orderId: o, screen: 'order' } });
   });
@@ -83,7 +85,7 @@ describe('기사 개인 알림', () => {
     const o = await seedOrder(w.db, w.A, { status: 'arrived_pickup', driver_id: w.d });
     await clear();
     await as(w.db, w.op, tx => tx.query('select staff_set_status($1, $2, $3)', [o, 'cancelled', '고객 취소']));
-    const m = await sent();
+    const m = await notToCustomer();
     expect(m).toEqual([expect.objectContaining({ to: 'T_d', title: '관제가 오더를 취소했어요' })]);
   });
 });
@@ -102,7 +104,7 @@ describe('관제 메시지', () => {
     await clear();
     await as(w.db, w.d, tx => tx.query(`insert into messages(order_id, thread, body) values ($1, 'driver', '도착했어요')`, [o]));
     await as(w.db, w.op, tx => tx.query(`insert into messages(order_id, thread, body) values ($1, 'customer', '고객님 안내')`, [o]));
-    expect(await requests()).toEqual([]);
+    expect(await notToCustomer()).toEqual([]);
   });
 });
 

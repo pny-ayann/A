@@ -15,6 +15,7 @@
 - 설계 문서: `docs/superpowers/specs/2026-11-16-1단계-오더흐름-design.md`
 - 기사용·고객용: React Native + Expo (TypeScript) 휴대폰 앱. **안드로이드 먼저**, 아이폰은 같은 코드로 나중에.
 - 기사용 앱: 위치 `apps/driver`, 화면 확인 `npm run web -w @takson/driver` (브라우저). 휴대폰은 개발용 앱(EAS development 빌드) + `apps/driver`에서 `npx.cmd expo start --dev-client --port 8082` (푸시·화면 꺼짐 위치는 Expo Go로 안 됨). 자세한 건 `supabase/README.md` 6번. EAS 업로드 제외 목록은 루트 `.easignore`.
+- 고객용 앱: 위치 `apps/customer`, 화면 확인 `npm run web -w @takson/customer` → http://localhost:8083. 휴대폰은 개발용 앱 + `apps/customer`에서 `npx.cmd expo start --dev-client --port 8084`. 카카오 주소·거리는 Supabase 함수 `kakao`(비밀값 `KAKAO_REST_KEY`)가 대신 부름. 자세한 건 `supabase/README.md` 7번.
 - 관제용: **웹** (Next.js, TypeScript), PC 화면 기준. 위치 `apps/admin`, 실행 `npm run dev -w @takson/admin` → http://localhost:3000 (설정은 `supabase/README.md` 5번).
 - 세 앱이 코드·타입을 공유하도록 한 저장소에서 관리.
 - 서버/실시간/로그인/사진: Supabase 무료 요금제 우선. 사진은 압축해서 무료 용량 안에서 운영.
