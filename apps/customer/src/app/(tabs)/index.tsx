@@ -25,17 +25,22 @@ export default function MyOrders() {
   const [rows, setRows] = useState<Row[]>([]);
   const [tab, setTab] = useState<'active' | 'done'>('active');
   const [loading, setLoading] = useState(false);
+  const [unread, setUnread] = useState<Record<string, number>>({});
 
   const load = useCallback(async () => {
     if (!companyId) return;
     setLoading(true);
     const since = new Date(Date.now() - 60 * 24 * 3600 * 1000).toISOString();
     // 최근 60일 + 아직 안 끝난 것 전부 (서버 권한이 막아도 앱에서도 내 업체로 한 번 더 거른다)
-    const [recent, running] = await Promise.all([
+    const [recent, running, ur] = await Promise.all([
       supabase.from('orders').select(COLS).eq('company_id', companyId).gte('created_at', since)
         .order('created_at', { ascending: false }).limit(300),
       supabase.from('orders').select(COLS).eq('company_id', companyId).not('status', 'in', '(completed,cancelled)'),
+      supabase.rpc('unread_counts'),
     ]);
+    const u: Record<string, number> = {};
+    for (const r of (ur.data ?? []) as { order_id: string; thread: string; unread: number }[]) if (r.thread === 'customer') u[r.order_id] = r.unread;
+    setUnread(u);
     setLoading(false);
     if (recent.error && running.error) return; // 신호 문제: 지금 목록 유지
     const map = new Map<string, Row>();
@@ -91,6 +96,7 @@ export default function MyOrders() {
               {r.pickup_area || r.pickup_address} → {r.dropoff_area || r.dropoff_address}
             </Text>
             <Text style={{ fontSize: 15, color: color.sub }}>{r.vehicle_number ?? '차량번호 없음'} · {won(r.fare)}</Text>
+            {unread[r.id] ? <Text style={{ fontSize: 15, fontWeight: '700', color: color.danger }}>관제 새 메시지 {unread[r.id]}</Text> : null}
           </Pressable>
         )} />
     </SafeAreaView>

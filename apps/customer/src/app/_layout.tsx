@@ -23,6 +23,8 @@ function Gate() {
         <Stack.Screen name="order/[id]/index" options={{ headerShown: true, title: '오더' }} />
         <Stack.Screen name="order/[id]/edit" options={{ headerShown: true, title: '오더 수정' }} />
         <Stack.Screen name="order/[id]/amend" options={{ headerShown: true, title: '변경 요청' }} />
+        <Stack.Screen name="order/[id]/chat" options={{ headerShown: true, title: '관제 문의' }} />
+        <Stack.Screen name="order/[id]/photos" options={{ headerShown: true, title: '사진·주유비' }} />
         <Stack.Screen name="address-search" options={{ headerShown: true, title: '주소 검색', presentation: 'modal' }} />
       </Stack.Protected>
     </Stack>
