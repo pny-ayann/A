@@ -35,11 +35,17 @@ Deno.serve(async req => {
   if (problem) return json({ error: problem }, 400);
   const r = body as KakaoRequest;
   const url = r.op === 'geocode' ? geocodeUrl(r.query) : directionsUrl(r.points);
-  const res = await fetch(url, { headers: { Authorization: `KakaoAK ${key}` } });
-  if (!res.ok) {
-    console.error(`[kakao] ${new URL(url).host} ${res.status}`);
+  // 카카오 연결이 끊기거나 이상한 응답이 와도 CORS 머리글이 붙은 답을 준다 (웹 확인용 화면이 원인을 볼 수 있게)
+  try {
+    const res = await fetch(url, { headers: { Authorization: `KakaoAK ${key}` } });
+    if (!res.ok) {
+      console.error(`[kakao] ${new URL(url).host} ${res.status}`);
+      return json({ error: 'KAKAO_FAILED' }, 502);
+    }
+    const data: unknown = await res.json();
+    return r.op === 'geocode' ? json(parseAddress(data)) : json({ km: parseDirections(data) });
+  } catch (e) {
+    console.error(`[kakao] ${new URL(url).host} ${e instanceof Error ? e.name : 'error'}`);
     return json({ error: 'KAKAO_FAILED' }, 502);
   }
-  const data: unknown = await res.json();
-  return r.op === 'geocode' ? json(parseAddress(data)) : json({ km: parseDirections(data) });
 });
