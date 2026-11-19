@@ -24,3 +24,11 @@ test('업체가 없는 고객 계정도 쓸 수 없다', () => {
 test('프로필을 못 읽었으면 쓸 수 없다', () => {
   expect(routeFor(null, true)).toBe('not-customer');
 });
+
+test('프로필을 못 불러오면(신호 약함·서버 오류) 고객 아님이 아니라 다시 시도 화면', () => {
+  expect(routeFor(null, true, true)).toBe('retry');
+});
+
+test('불러오기 실패여도 로그인 전이면 로그인 화면', () => {
+  expect(routeFor(null, false, true)).toBe('login');
+});

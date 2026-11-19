@@ -19,6 +19,9 @@ function Gate() {
       <Stack.Protected guard={route === 'not-customer'}>
         <Stack.Screen name="not-customer" />
       </Stack.Protected>
+      <Stack.Protected guard={route === 'retry'}>
+        <Stack.Screen name="retry" />
+      </Stack.Protected>
       <Stack.Protected guard={route === 'home'}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="order/[id]/index" options={{ headerShown: true, title: '오더' }} />

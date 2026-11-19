@@ -11,14 +11,18 @@ type AuthState = {
   /** 내 업체 이름 (내 정보 화면) */
   companyName: string | null;
   route: Route;
+  /** 프로필을 다시 불러오기 (다시 시도 화면) */
+  retry: () => Promise<void>;
   signOut: () => Promise<void>;
 };
 
 const Ctx = createContext<AuthState | null>(null);
 
-export async function loadProfile(userId: string): Promise<CustomerProfile | null> {
-  const { data } = await supabase.from('profiles').select('id, role, name, company_id').eq('id', userId).maybeSingle();
-  return (data as CustomerProfile | null) ?? null;
+/** 프로필 읽기. 네트워크·서버 오류면 failed (프로필이 없는 것과 구분) */
+export async function loadProfile(userId: string): Promise<{ profile: CustomerProfile | null; failed: boolean }> {
+  const { data, error } = await supabase.from('profiles').select('id, role, name, company_id').eq('id', userId).maybeSingle();
+  if (error) return { profile: null, failed: true };
+  return { profile: (data as CustomerProfile | null) ?? null, failed: false };
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -26,10 +30,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<CustomerProfile | null>(null);
   const [companyName, setCompanyName] = useState<string | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   const apply = useCallback(async (s: Session | null) => {
     setSession(s);
-    const p = s ? await loadProfile(s.user.id) : null;
+    const r = s ? await loadProfile(s.user.id) : { profile: null, failed: false };
+    const p = r.profile;
+    setLoadFailed(r.failed);
     setProfile(p);
     if (p?.company_id) {
       const { data } = await supabase.from('companies').select('name').eq('id', p.company_id).maybeSingle();
@@ -54,7 +61,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     session,
     profile,
     companyName,
-    route: routeFor(profile, !!session),
+    route: routeFor(profile, !!session, loadFailed),
+    retry: () => apply(session),
     // 로그아웃 전에 이 휴대폰의 알림 등록을 지운다 (다른 사람이 쓰면 앞사람 알림이 오지 않게)
     signOut: async () => { await unregisterPushToken(); await supabase.auth.signOut(); },
   };
