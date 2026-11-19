@@ -99,3 +99,38 @@ test('발송이 실패해도 상태 변경은 막지 않는다', async () => {
 test('company_customer_ids는 앱에서 부를 수 없다', async () => {
   await expect(as(w.db, w.a, tx => tx.query('select company_customer_ids($1)', [w.A]))).rejects.toThrow(/permission denied/);
 });
+
+describe('고객 변경 요청 → 배정 기사 알림 (설계 7.2)', () => {
+  const toDriver = async () => (await sent()).filter(m => m.to === 'T_d');
+
+  test('도착지만 바꾸고 요금이 그대로여도 기사에게 알린다', async () => {
+    const o = await seedOrder(w.db, w.A, { status: 'assigned', driver_id: w.d, fare: 35000 });
+    await clear();
+    await as(w.db, w.a, tx => tx.query(`select customer_amend_order($1,'dropoff_change',35000,'{"address":"부산 해운대구","area":"해운대구 우동"}'::jsonb)`, [o]));
+    expect(await toDriver()).toEqual([expect.objectContaining({
+      title: '오더가 바뀌었어요', body: '도착지 변경 · 요금 그대로 35,000원', data: { orderId: o, screen: 'order' },
+    })]);
+  });
+
+  test('요금도 바뀌면 알림 한 번에 사유와 요금 변화를 함께 (요금 알림을 따로 또 보내지 않는다)', async () => {
+    const o = await seedOrder(w.db, w.A, { status: 'driving', driver_id: w.d, fare: 35000 });
+    await clear();
+    await as(w.db, w.a, tx => tx.query(`select customer_amend_order($1,'waypoint_added',40000,null,'{"address":"수원"}'::jsonb)`, [o]));
+    expect(await toDriver()).toEqual([expect.objectContaining({ title: '오더가 바뀌었어요', body: '경유지 추가 · 35,000원 → 40,000원' })]);
+  });
+
+  test('미션 추가도 알린다', async () => {
+    const m = (await w.db.query<{ id: string }>(`insert into missions(name, extra_fare) values ('세차', 10000) returning id`)).rows[0]!.id;
+    const o = await seedOrder(w.db, w.A, { status: 'arrived_pickup', driver_id: w.d, fare: 35000 });
+    await clear();
+    await as(w.db, w.a, tx => tx.query(`select customer_amend_order($1,'mission_added',45000,null,null,$2)`, [o, m]));
+    expect(await toDriver()).toEqual([expect.objectContaining({ title: '오더가 바뀌었어요', body: '미션 추가(세차) · 35,000원 → 45,000원' })]);
+  });
+
+  test('관제가 요금을 바꾸면 예전처럼 요금 알림이 간다', async () => {
+    const o = await seedOrder(w.db, w.A, { status: 'assigned', driver_id: w.d, fare: 35000 });
+    await clear();
+    await as(w.db, w.op, tx => tx.query('update orders set fare = 40000 where id = $1', [o]));
+    expect((await toDriver()).map(x => x.title)).toEqual(['요금이 바뀌었어요']);
+  });
+});
