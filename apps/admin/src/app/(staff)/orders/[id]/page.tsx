@@ -65,7 +65,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     <div className="min-w-0 space-y-4">
       <div className="flex flex-wrap items-center gap-3">
         <Link href="/orders" className="text-sm text-slate-500 hover:underline">← 관제판</Link>
-        <h1 className="text-xl font-bold">{company?.name ?? '?'} · {order.pickup_area ?? '?'} → {order.dropoff_area ?? '?'}</h1>
+        <h1 className="text-xl font-bold">{order.order_no} · {company?.name ?? '?'} · {order.pickup_area ?? '?'} → {order.dropoff_area ?? '?'}</h1>
         <span className="rounded bg-slate-800 px-2 py-0.5 text-sm text-white">{STATUS_LABEL[status]}</span>
         {order.kind === 'daeri' && <span className="rounded bg-purple-100 px-2 py-0.5 text-xs text-purple-700">대리</span>}
         {order.dispatch_mode === 'staff_only' && <span className="rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-800">관제 배차 전용</span>}

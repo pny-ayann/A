@@ -13,9 +13,9 @@ import { color } from '@/ui/kit';
 
 type Row = ListOrder & {
   pickup_area: string | null; pickup_address: string; dropoff_area: string | null; dropoff_address: string;
-  vehicle_number: string | null; fare: number;
+  vehicle_number: string | null; fare: number; order_no: string;
 };
-const COLS = 'id, status, created_at, reserved_at, pickup_area, pickup_address, dropoff_area, dropoff_address, vehicle_number, fare';
+const COLS = 'id, order_no, status, created_at, reserved_at, pickup_area, pickup_address, dropoff_area, dropoff_address, vehicle_number, fare';
 
 const tone = (s: OrderStatus) => (s === 'open' ? color.warn : s === 'completed' ? color.ok : s === 'cancelled' ? color.sub : color.primary);
 
@@ -94,7 +94,7 @@ export default function MyOrders() {
           <Pressable accessibilityRole="button" onPress={() => router.push(`/order/${r.id}` as Href)}
             style={{ backgroundColor: '#fff', borderRadius: 12, padding: 14, gap: 6, borderWidth: 1, borderColor: color.line }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-              <Text style={{ fontSize: 16, fontWeight: '700', color: tone(r.status) }}>{statusLabel(r.status)}</Text>
+              <Text style={{ fontSize: 16, fontWeight: '700', color: tone(r.status) }}>{statusLabel(r.status)} <Text style={{ color: color.sub, fontWeight: '400' }}>{r.order_no}</Text></Text>
               <Text style={{ fontSize: 15, color: color.sub }}>
                 {r.reserved_at ? `[예약] ${kstShort(r.reserved_at)}` : kstShort(r.created_at)}
               </Text>

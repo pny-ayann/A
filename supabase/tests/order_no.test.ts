@@ -31,3 +31,9 @@ test('푸시 본문 경로 앞에 번호가 붙는다', async () => {
   const r = await w.db.query<{ body: { body: string }[] }>('select body from net.http_requests_log');
   expect(r.rows[0]!.body[0]!.body).toBe('[1119-001] 중구 태평로1가 → 강남구 역삼동 · 35,000원');
 });
+
+test('기사 공개 오더 목록에도 번호가 있다', async () => {
+  await seedOrder(w.db, w.A, { created_at: '2026-11-19T10:00:00+09:00' });
+  const r = await as(w.db, w.d, tx => tx.query<{ order_no: string }>('select order_no from list_open_orders(null, null)'));
+  expect(r.rows).toEqual([{ order_no: '1119-001' }]);
+});

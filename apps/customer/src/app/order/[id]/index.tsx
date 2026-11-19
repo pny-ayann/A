@@ -78,6 +78,7 @@ export default function OrderDetail() {
     <Screen>
       <View style={{ gap: 4 }}>
         <Title>{statusLabel(order.status)}</Title>
+        <Body sub>오더 번호 {order.order_no}</Body>
         {!!order.reserved_at && <Body style={{ color: color.warn, fontWeight: '700' }}>[예약] {kstShort(order.reserved_at)}</Body>}
       </View>
 

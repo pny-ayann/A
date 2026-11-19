@@ -81,7 +81,7 @@ export default function OrderDetail() {
         <Card>
           <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             <Text style={{ fontSize: 20, fontWeight: '800', color: done ? color.ok : color.primary }}>{STATUS_LABEL[order.status]}</Text>
-            <Text style={{ fontSize: 16, color: color.sub }}>{order.kind === 'daeri' ? '대리' : '탁송'}</Text>
+            <Text style={{ fontSize: 16, color: color.sub }}>{order.order_no} · {order.kind === 'daeri' ? '대리' : '탁송'}</Text>
             {order.reserved_at ? <Text style={{ fontSize: 16, fontWeight: '800', color: color.warn }}>[예약] {kstShort(order.reserved_at)}</Text> : null}
             <Text style={{ marginLeft: 'auto', fontSize: 20, fontWeight: '800', color: color.text }}>
               {won(order.fare)} · {order.payment_method === 'cash' ? '현금' : '후불'}

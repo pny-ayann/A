@@ -7,7 +7,7 @@ export function OrderCard({ order, onGrab, busy }: { order: OpenOrder; onGrab: (
   return (
     <View style={s.card}>
       <View style={s.row}>
-        <Text style={s.kind}>{v.kindLabel}</Text>
+        <Text style={s.kind}>{order.order_no} · {v.kindLabel}</Text>
         {v.badge && <Text style={s.badge}>{v.badge}</Text>}
         <Text style={[s.pay, v.pay === '현금' && { color: color.ok, borderColor: color.ok }]}>{v.pay}</Text>
       </View>

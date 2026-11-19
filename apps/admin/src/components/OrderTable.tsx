@@ -31,7 +31,7 @@ export function OrderTable({ orders, companyName, driverName, selectedId, onSele
     <table className="w-full text-sm">
       <thead className="bg-slate-100 text-left text-xs text-slate-600">
         <tr>
-          <th className="px-2 py-1.5">접수</th><th className="px-2">업체</th><th className="px-2">출발 → 도착</th>
+          <th className="px-2 py-1.5">번호</th><th className="px-2">접수</th><th className="px-2">업체</th><th className="px-2">출발 → 도착</th>
           <th className="px-2">예약</th><th className="px-2 text-right">요금</th><th className="px-2">결제</th>
           <th className="px-2">기사</th><th className="px-2">상태</th><th className="px-2" />
         </tr>
@@ -43,7 +43,8 @@ export function OrderTable({ orders, companyName, driverName, selectedId, onSele
           return (
             <tr key={o.id} onClick={() => onSelect(o.id)} aria-selected={selected} data-late={late || undefined}
               className={`cursor-pointer border-b ${selected ? 'bg-blue-50' : late ? 'bg-red-50 text-red-700' : 'hover:bg-slate-50'}`}>
-              <td className="px-2 py-1.5 whitespace-nowrap">{fmtTime(o.created_at)}</td>
+              <td className="px-2 py-1.5 whitespace-nowrap font-mono">{o.order_no}</td>
+              <td className="px-2 whitespace-nowrap">{fmtTime(o.created_at)}</td>
               <td className="px-2">{companyName(o.company_id)}</td>
               <td className="px-2">
                 {o.kind === 'daeri' && <span className="mr-1 rounded bg-slate-200 px-1 text-xs">대리</span>}
