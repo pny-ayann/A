@@ -25,7 +25,7 @@ function StopBlock({ title, stop }: { title: string; stop: Stop }) {
 
 /** 오더 상세: 상태, 경로, 차량, 요금, 기사(전화·위치), 기록 */
 export default function OrderDetail() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, warn } = useLocalSearchParams<{ id: string; warn?: string }>();
   const { order, events, driver, missing } = useOrder(id);
   const [loc, setLoc] = useState<{ lat: number; lng: number; updated_at: string } | null>(null);
   const [now, setNow] = useState(new Date());
@@ -53,6 +53,8 @@ export default function OrderDetail() {
         <Title>{statusLabel(order.status)}</Title>
         {order.reserved_at && <Body style={{ color: color.warn, fontWeight: '700' }}>[예약] {kstShort(order.reserved_at)}</Body>}
       </View>
+
+      {warn ? <Notice tone="danger">오더는 접수됐지만 {warn} 저장에 실패했어요. 관제에 문의해 주세요.</Notice> : null}
 
       {order.status !== 'cancelled' && (
         <View style={{ flexDirection: 'row', gap: 4 }}>

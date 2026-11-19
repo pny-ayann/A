@@ -21,6 +21,7 @@ function Gate() {
       <Stack.Protected guard={route === 'home'}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="order/[id]/index" options={{ headerShown: true, title: '오더' }} />
+        <Stack.Screen name="address-search" options={{ headerShown: true, title: '주소 검색', presentation: 'modal' }} />
       </Stack.Protected>
     </Stack>
   );

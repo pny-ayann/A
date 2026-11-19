@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { emptyPlace, toOrderInsert, validateOrderForm, type OrderForm } from './form';
+import { emptyPlace, toOrderInsert, validateOrderForm, type OrderForm } from './orderForm';
 
 const now = new Date('2026-11-17T03:00:00Z');
 const place = (address: string) => ({ ...emptyPlace(), address, area: '중구 태평로1가', lat: 37.56, lng: 126.97 });

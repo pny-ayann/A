@@ -4,10 +4,18 @@
 // POST { op: 'route', points: [{lat,lng}, ...] } → { km: number | null }
 import { checkRequest, directionsUrl, geocodeUrl, parseAddress, parseDirections, type KakaoRequest } from '../_shared/kakao.ts';
 
+// 브라우저(웹 확인용)에서 부를 때 필요한 CORS 머리글. 휴대폰 앱은 상관없다.
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
 const json = (body: unknown, status = 200) =>
-  new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+  new Response(JSON.stringify(body), { status, headers: { ...CORS, 'Content-Type': 'application/json' } });
 
 Deno.serve(async req => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   if (req.method !== 'POST') return json({ error: 'POST만 돼요.' }, 405);
   const key = Deno.env.get('KAKAO_REST_KEY');
   if (!key) return json({ error: 'NO_KEY' }, 500);
