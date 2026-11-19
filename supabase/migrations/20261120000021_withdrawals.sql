@@ -72,9 +72,9 @@ create table public.bank_accounts (
   updated_at timestamptz not null default now()
 );
 alter table public.bank_accounts enable row level security;
-create policy bank_accounts_select on public.bank_accounts for select using (driver_id = auth.uid() or public.is_admin());
-create policy bank_accounts_insert on public.bank_accounts for insert with check (driver_id = auth.uid());
-create policy bank_accounts_update on public.bank_accounts for update using (driver_id = auth.uid()) with check (driver_id = auth.uid());
+create policy bank_accounts_select on public.bank_accounts for select to authenticated using (driver_id = auth.uid() or public.is_admin());
+create policy bank_accounts_insert on public.bank_accounts for insert to authenticated with check (driver_id = auth.uid());
+create policy bank_accounts_update on public.bank_accounts for update to authenticated using (driver_id = auth.uid()) with check (driver_id = auth.uid());
 
 -- 출금 신청 ---------------------------------------------------------------------
 create table public.withdrawal_requests (
@@ -98,7 +98,7 @@ create table public.withdrawal_requests (
 );
 create index withdrawal_requests_status on public.withdrawal_requests(status, created_at);
 alter table public.withdrawal_requests enable row level security;
-create policy withdrawal_requests_select on public.withdrawal_requests for select
+create policy withdrawal_requests_select on public.withdrawal_requests for select to authenticated
   using (driver_id = auth.uid() or public.is_admin());
 
 create function public.request_withdrawal(p_amount int) returns uuid
@@ -116,7 +116,8 @@ begin
   if p_amount is null or p_amount < 1 then raise exception 'INVALID_AMOUNT'; end if;
   select * into v_acc from public.bank_accounts where driver_id = auth.uid();
   if not found then raise exception 'NO_BANK_ACCOUNT'; end if;
-  select withdrawable into v_free from public.wallet_summary(auth.uid());
+  -- 잠금을 얻은 뒤의 실제 시각으로 계산 (now()는 트랜잭션 시작 시각이라 그 사이 다른 신청을 놓친다)
+  select withdrawable into v_free from public.wallet_summary(auth.uid(), clock_timestamp());
   if p_amount > v_free then raise exception 'OVER_WITHDRAWABLE'; end if;
 
   insert into public.wallet_entries(driver_id, amount, kind, label)
@@ -192,6 +193,8 @@ declare
   x jsonb;
 begin
   if not public.is_admin() then raise exception 'FORBIDDEN'; end if;
+  -- 두 관리자가 동시에 눌러도 한 번만 (설정 줄을 잠그고 확인)
+  perform 1 from public.settings where id = 1 for update;
   if (select settlement_start_at is not null from public.settings where id = 1) then raise exception 'INVALID_TRANSITION'; end if;
   for x in select * from jsonb_array_elements(coalesce(p_openings, '[]'::jsonb)) loop
     if coalesce((x->>'amount')::int, 0) <> 0 then
@@ -200,3 +203,6 @@ begin
   end loop;
   update public.settings set settlement_start_at = now() where id = 1;
 end $$;
+
+-- 기사 앱 충전금 화면이 새로고침 없이 바뀌도록 실시간 발행 (RLS를 따르므로 본인·관리자 줄만 전달)
+alter publication supabase_realtime add table public.wallet_entries, public.withdrawal_requests;

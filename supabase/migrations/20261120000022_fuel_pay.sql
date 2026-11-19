@@ -11,6 +11,21 @@ alter table public.fuel_receipts
   add column paid_by uuid references public.profiles(id),
   add column paid_amount int;
 
+-- 지급 칸(paid_at·paid_by·paid_amount)은 pay_fuel만 쓴다. 기사·관제가 직접 넣거나 지우면 무시
+-- (장부 차이 계산의 기준이라, 조작되면 엉뚱한 금액이 충전금에 들어간다)
+create function public.fuel_receipts_guard_paid() returns trigger
+language plpgsql as $$
+begin
+  if tg_op = 'INSERT' then
+    new.paid_at := null; new.paid_by := null; new.paid_amount := null;
+  elsif coalesce(current_setting('app.fuel_pay', true), '') <> 'on' then
+    new.paid_at := old.paid_at; new.paid_by := old.paid_by; new.paid_amount := old.paid_amount;
+  end if;
+  return new;
+end $$;
+create trigger fuel_receipts_guard_paid before insert or update on public.fuel_receipts
+  for each row execute function public.fuel_receipts_guard_paid();
+
 -- 이 영수증의 주유비를 상황실이 주는가
 create function public.fuel_paid_by_office(p_order_id uuid) returns boolean
 language sql stable security definer set search_path = public as $$
@@ -44,6 +59,7 @@ declare
   v_n int := 0;
 begin
   if not public.is_staff() then raise exception 'FORBIDDEN'; end if;
+  perform set_config('app.fuel_pay', 'on', true);
   for r in
     select f.id, f.driver_id, f.amount, f.order_id, o.order_no
     from public.fuel_receipts f join public.orders o on o.id = f.order_id
@@ -55,6 +71,7 @@ begin
     update public.fuel_receipts set paid_at = now(), paid_by = auth.uid(), paid_amount = r.amount where id = r.id;
     v_n := v_n + 1;
   end loop;
+  perform set_config('app.fuel_pay', '', true);
   return v_n;
 end $$;
 

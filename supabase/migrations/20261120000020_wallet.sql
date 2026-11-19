@@ -7,7 +7,17 @@ alter table public.settings
     check (default_commission_rate >= 0 and default_commission_rate <= 100),
   add column settlement_start_at timestamptz; -- null = 정산 꺼짐
 
-alter table public.orders add column completed_at timestamptz;
+alter table public.orders add column completed_at timestamptz, add column first_completed_at timestamptz;
+
+-- 이미 끝난 오더: 완료 기록(없으면 마지막 수정 시각)으로 채운다 → 정산 시작 전 완료로 남는다
+update public.orders o
+set completed_at = x.at, first_completed_at = x.at
+from (
+  select o2.id, coalesce((select min(e.created_at) from public.order_events e
+                          where e.order_id = o2.id and e.to_status = 'completed'), o2.updated_at) as at
+  from public.orders o2 where o2.status = 'completed'
+) x
+where x.id = o.id;
 
 create table public.wallet_entries (
   id uuid primary key default gen_random_uuid(),
@@ -20,7 +30,7 @@ create table public.wallet_entries (
   rate numeric(5, 2),
   reason text,
   ref_id uuid,
-  effective_at timestamptz not null default now(),
+  effective_at timestamptz not null default clock_timestamp(),
   withdrawable_at timestamptz,
   created_by uuid default auth.uid(),
   created_at timestamptz not null default clock_timestamp()
@@ -29,7 +39,7 @@ create index wallet_entries_driver on public.wallet_entries(driver_id, effective
 create index wallet_entries_order on public.wallet_entries(order_id, driver_id);
 
 alter table public.wallet_entries enable row level security;
-create policy wallet_entries_select on public.wallet_entries for select
+create policy wallet_entries_select on public.wallet_entries for select to authenticated
   using (driver_id = auth.uid() or public.is_staff());
 -- 쓰기 정책 없음: 정의자 함수와 트리거만 쓴다
 
@@ -44,7 +54,11 @@ begin
       end if;
       if tg_op = 'UPDATE' and new.completed_at is null then new.completed_at := now(); end if;
     end if;
+    -- 처음 완료 시각은 한 번 정하면 바뀌지 않는다
+    new.first_completed_at := case when tg_op = 'INSERT' then new.completed_at
+                                   else coalesce(old.first_completed_at, new.completed_at) end;
   else
+    if tg_op = 'UPDATE' then new.first_completed_at := old.first_completed_at; end if;
     new.completed_at := null;
   end if;
   return new;
@@ -96,13 +110,27 @@ begin
     v_rate := coalesce(v_rate, v_default);
 
     v_target := 0;
+    -- 처음 완료가 정산 시작 이후인 오더만 (시작 전에 끝난 오더는 되돌렸다 다시 완료해도 정산하지 않음)
     if o.status = 'completed' and d = o.driver_id and v_start is not null
-       and o.completed_at is not null and o.completed_at >= v_start and o.fare > 0 then
+       and o.completed_at is not null and o.first_completed_at >= v_start and o.fare > 0 then
       v_fee := round(o.fare * v_rate / 100);
       v_target := case when o.payment_method = 'postpaid' then o.fare - v_fee else -v_fee end;
     end if;
 
     if v_target = v_current then continue; end if;
+
+    -- 결제 방식이 바뀌어 줄 종류가 달라지면(현금↔후불): 예전 몫은 예전 시각으로 되돌리고, 새 몫은 새 규칙 시각으로
+    if v_current <> 0 and v_target <> 0 then
+      select * into v_anchor from public.wallet_entries
+      where order_id = p_order_id and driver_id = d and kind in ('postpaid', 'cash_fee')
+      order by created_at desc limit 1;
+      if v_anchor.kind is distinct from (case when o.payment_method = 'postpaid' then 'postpaid' else 'cash_fee' end) then
+        insert into public.wallet_entries(driver_id, amount, kind, label, order_id, rate, effective_at, withdrawable_at, created_by)
+        values (d, -v_current, 'settle_adjust', '정산 변경 (' || o.order_no || ')', p_order_id, v_rate,
+                v_anchor.effective_at, v_anchor.withdrawable_at, auth.uid());
+        v_current := 0;
+      end if;
+    end if;
 
     if v_current = 0 then
       -- 새로 정산: 시각을 지금 완료 기준으로
@@ -155,8 +183,9 @@ begin
   if auth.uid() is not null and p_driver is distinct from auth.uid() and not public.is_staff() then
     raise exception 'FORBIDDEN';
   end if;
-  select coalesce(sum(amount) filter (where effective_at <= p_at), 0),
-         coalesce(sum(amount) filter (where effective_at > p_at), 0),
+  -- 출금 신청 줄은 시각과 상관없이 늘 뺀다 (동시에 들어온 다른 신청을 놓치지 않게)
+  select coalesce(sum(amount) filter (where effective_at <= p_at or kind = 'withdraw'), 0),
+         coalesce(sum(amount) filter (where effective_at > p_at and kind <> 'withdraw'), 0),
          coalesce(sum(amount) filter (where effective_at <= p_at and withdrawable_at > p_at), 0)
     into v_bal, v_pending, v_locked
   from public.wallet_entries where driver_id = p_driver;

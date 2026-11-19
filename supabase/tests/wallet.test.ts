@@ -127,3 +127,22 @@ test('고객은 장부를 볼 수 없다, wallet_summary로 남의 잔액을 볼
   await expectError(as(w.db, w.a, tx => tx.query('select * from wallet_summary($1)', [w.d])), 'FORBIDDEN');
   expect((await as(w.db, w.op, tx => tx.query('select balance from wallet_summary($1)', [w.d]))).rows).toHaveLength(1);
 });
+
+test('완료 뒤 현금→후불로 바꾸면 후불 몫은 다음 날 12시부터 출금 (I1)', async () => {
+  const o = await seedOrder(w.db, w.A, { status: 'driving', driver_id: w.d, fare: 30000, payment_method: 'cash' });
+  await complete(o, '2026-11-19T21:00:00+09:00');
+  await w.db.query(`update orders set payment_method = 'postpaid' where id = $1`, [o]);
+  const e = await entries(w.d);
+  expect(e.map(x => [x.kind, x.amount])).toEqual([['cash_fee', -6000], ['settle_adjust', 6000], ['postpaid', 24000]]);
+  expect(iso(e[2]!.withdrawable_at)).toBe('2026-11-20T03:00:00.000Z');
+  expect(await summary(w.d, '2026-11-20T11:59:00+09:00')).toEqual({ balance: 24000, withdrawable: 0, pending: 0 });
+});
+
+test('정산 시작 전에 끝난 오더는 되돌렸다 다시 완료해도 장부가 없다 (I2)', async () => {
+  await w.db.query(`update settings set settlement_start_at = '2026-11-20T00:00:00+09:00'`);
+  const o = await seedOrder(w.db, w.A, { status: 'driving', driver_id: w.d, fare: 30000, payment_method: 'postpaid' });
+  await complete(o, '2026-11-19T21:00:00+09:00');
+  await w.db.query(`update orders set status = 'driving' where id = $1`, [o]);
+  await complete(o, '2026-11-20T10:00:00+09:00');
+  expect(await entries()).toEqual([]);
+});

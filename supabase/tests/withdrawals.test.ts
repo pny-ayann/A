@@ -68,6 +68,14 @@ describe('출금', () => {
     expect((await summary(w.d)).balance).toBe(0);
   });
 
+  test('먼저 끝난 다른 신청의 줄이 내 트랜잭션 시작보다 늦게 적혀도 함께 센다 (C1)', async () => {
+    await give(w.d, 4000);
+    await account(w.d);
+    // 다른 기기의 신청이 이 트랜잭션 시작 뒤에 적힌 상황 (effective_at이 now()보다 늦음)
+    await w.db.query(`insert into wallet_entries(driver_id, amount, kind, label, effective_at) values ($1, -4000, 'withdraw', '출금 신청', now() + interval '1 second')`, [w.d]);
+    await expectError(request(w.d, 4000), 'OVER_WITHDRAWABLE');
+  });
+
   test('정산이 꺼져 있으면 신청 불가', async () => {
     await give(w.d, 4000);
     await account(w.d);

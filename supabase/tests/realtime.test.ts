@@ -4,7 +4,7 @@ test('실시간 발행 목록에 오더·이력·메시지·기사 위치가 들
   const db = await createDb();
   const r = await db.query<{ tablename: string }>(
     `select tablename from pg_publication_tables where pubname='supabase_realtime' order by 1`);
-  expect(r.rows.map(x => x.tablename)).toEqual(['driver_locations', 'messages', 'order_events', 'orders']);
+  expect(r.rows.map(x => x.tablename)).toEqual(['driver_locations', 'messages', 'order_events', 'orders', 'wallet_entries', 'withdrawal_requests']);
 });
 
 // 실시간 서버는 구독자마다 그 사람 역할로 읽기 규칙(RLS)을 검사한다.
@@ -16,7 +16,8 @@ test('로그인 안 한(anon) 사람이 실시간 표를 읽어도 오류 없이
   await w.db.query(`insert into public.messages(order_id, thread, sender_id, body) values ($1, 'customer', $2, '안녕하세요')`, [order, w.a]);
   await w.db.query(`insert into public.order_events(order_id, type) values ($1, 'status')`, [order]);
   await w.db.query(`insert into public.driver_locations(driver_id, lat, lng) values ($1, 37.5, 127.0)`, [w.d]);
-  for (const t of ['orders', 'order_events', 'messages', 'driver_locations']) {
+  await w.db.query(`insert into public.wallet_entries(driver_id, amount, kind, label) values ($1, 1000, 'topup', '충전')`, [w.d]);
+  for (const t of ['orders', 'order_events', 'messages', 'driver_locations', 'wallet_entries', 'withdrawal_requests']) {
     const n = await w.db.transaction(async tx => {
       await tx.exec('set local role anon');
       return (await tx.query<{ n: number }>(`select count(*)::int as n from public.${t}`)).rows[0]!.n;

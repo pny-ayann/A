@@ -84,3 +84,15 @@ test('일반 관제도 지급할 수 있고, 기사·고객은 못 한다', asyn
   await expectError(as(w.db, w.d, tx => tx.query('select * from fuel_claims()')), 'FORBIDDEN');
   expect((await pay(w.op, [r])).rows[0]!.n).toBe(1);
 });
+
+test('기사·관제가 지급 칸을 직접 쓰거나 지울 수 없다 (C3)', async () => {
+  const o = await seedOrder(w.db, w.A, { status: 'driving', driver_id: w.d, payment_method: 'postpaid' });
+  const r = (await as(w.db, w.d, tx => tx.query<{ id: string }>(
+    `insert into fuel_receipts(order_id, amount, path, paid_at, paid_amount) values ($1::uuid, 10000, $1::text || '/r.jpg', now(), -5000000) returning id`, [o]))).rows[0]!.id;
+  expect((await w.db.query('select paid_at, paid_amount from fuel_receipts where id = $1', [r])).rows[0]).toEqual({ paid_at: null, paid_amount: null });
+  expect((await claims()).map(c => c.receipt_id)).toEqual([r]);
+  await pay(w.op, [r]);
+  await as(w.db, w.op, tx => tx.query('update fuel_receipts set paid_at = null, paid_amount = 0 where id = $1', [r]));
+  expect((await w.db.query('select paid_at is not null as paid, paid_amount from fuel_receipts where id = $1', [r])).rows[0]).toEqual({ paid: true, paid_amount: 10000 });
+  expect(await claims()).toEqual([]);
+});
