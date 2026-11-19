@@ -26,7 +26,7 @@ describe('고객 오더 알림', () => {
     await as(w.db, w.d, tx => tx.query('select claim_order($1, null, null)', [o]));
     const m = await toCustomers();
     expect(tokens(m)).toEqual(['C_a', 'C_a2']);
-    expect(m[0]).toMatchObject({ title: '배차됐어요 · 김기사', body: '중구 태평로1가 → 강남구 역삼동 · 12가3456', data: { orderId: o, screen: 'order' } });
+    expect(m[0]).toMatchObject({ title: '배차됐어요 · 김기사', body: expect.stringMatching(/^\[\d{4}-001\] 중구 태평로1가 → 강남구 역삼동 · 12가3456$/), data: { orderId: o, screen: 'order' } });
   });
 
   test('운행 시작(출발)과 완료를 알린다', async () => {
