@@ -38,3 +38,13 @@ export function amendDefaultFare(a: {
   if (a.oldAuto === null) return Math.max(a.current, a.newAuto);
   return Math.max(0, a.current + a.newAuto - a.oldAuto);
 }
+
+/** 거리 계산 중에 접수를 누르면 안내 문구 (요금을 직접 넣었으면 기다리지 않음). 아니면 null */
+export function submitWait(s: {
+  stops: { address: string; lat: number | null; lng: number | null }[];
+  km: number | null; routeFailed: boolean; edited: number | null;
+}): string | null {
+  const ready = s.stops.every(p => p.address && p.lat !== null && p.lng !== null);
+  if (!ready || s.km !== null || s.routeFailed || s.edited !== null) return null;
+  return '거리를 계산하고 있어요. 잠깐만 기다려 주세요.';
+}

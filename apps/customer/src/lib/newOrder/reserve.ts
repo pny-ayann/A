@@ -11,3 +11,15 @@ export function kstInputToIso(date: string, time: string): string | null {
   if (back.getUTCFullYear() !== y || back.getUTCMonth() !== m - 1 || back.getUTCDate() !== day) return null;
   return new Date(utc).toISOString();
 }
+
+const pad = (n: number) => String(n).padStart(2, '0');
+
+/** 예약 입력 기본값: 지금부터 1시간 이상 남은 첫 정각 (한국 시간 'YYYY-MM-DD', 'HH:00') */
+export function defaultReserve(now: Date): { date: string; time: string } {
+  const hour = 3600_000;
+  const t = new Date(Math.ceil((now.getTime() + hour) / hour) * hour + 9 * hour); // 한국 시간으로 옮긴 값
+  return {
+    date: `${t.getUTCFullYear()}-${pad(t.getUTCMonth() + 1)}-${pad(t.getUTCDate())}`,
+    time: `${pad(t.getUTCHours())}:00`,
+  };
+}

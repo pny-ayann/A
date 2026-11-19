@@ -40,7 +40,7 @@ function Chip({ label, on, onPress }: { label: string; on: boolean; onPress: () 
  */
 export default function Amend() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { order } = useOrder(id);
+  const { order, reload } = useOrder(id);
   const [reason, setReason] = useState<AmendReason | null>(null);
   const [place, setPlace] = useState<Place>(emptyPlace());
   const [missionId, setMissionId] = useState<string | undefined>();
@@ -108,7 +108,7 @@ export default function Amend() {
     setBusy(true);
     const { error: e } = await supabase.rpc('customer_amend_order', { p_order_id: id, ...p });
     setBusy(false);
-    if (e) { setError(errorMessage(e.message)); return; }
+    if (e) { setError(errorMessage(e.message)); void reload(); return; }
     if (router.canGoBack()) router.back(); else router.replace(`/order/${id}` as Href);
   }
 

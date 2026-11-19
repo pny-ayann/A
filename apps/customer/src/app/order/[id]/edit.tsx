@@ -1,14 +1,30 @@
 import { errorMessage } from '@takson/shared';
 import { router, useLocalSearchParams, type Href } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { kstInputToIso } from '@/lib/newOrder/reserve';
+import { editPatch, editRefusedMessage } from '@/lib/orders/edit';
 import { useOrder } from '@/lib/orders/useOrder';
 import { supabase } from '@/lib/supabase';
 import { kstParts } from '@/lib/time';
 import { BigButton, Card, color, Field, Notice, Screen } from '@/ui/kit';
 
 const pad = (n: number) => String(n).padStart(2, '0');
+const orNull = (s: string) => (s.trim() === '' ? null : s.trim());
+
+type Form = { v: Record<string, string>; pay: 'cash' | 'postpaid'; trans: '' | 'auto' | 'manual'; reserveOn: boolean };
+
+/** 화면 값 → orders 칸 (처음 값과 지금 값을 같은 방법으로 바꿔 비교한다) */
+function rowOf(x: Form): Record<string, unknown> {
+  const v = x.v;
+  return {
+    vehicle_number: v.vehicleNumber!.trim(), vehicle_model: orNull(v.vehicleModel!), vehicle_color: orNull(v.vehicleColor!),
+    transmission: x.trans || null, driver_memo: orNull(v.memo!), fare: Number(v.fare!.replace(/[^0-9]/g, '')),
+    payment_method: x.pay, reserved_at: x.reserveOn ? kstInputToIso(v.date!, v.time!) : null,
+    pickup_detail: orNull(v.pickupDetail!), pickup_contact_name: orNull(v.pickupName!), pickup_contact_phone: orNull(v.pickupPhone!),
+    dropoff_detail: orNull(v.dropoffDetail!), dropoff_contact_name: orNull(v.dropoffName!), dropoff_contact_phone: orNull(v.dropoffPhone!),
+  };
+}
 
 function Chip({ label, on, onPress }: { label: string; on: boolean; onPress: () => void }) {
   return (
@@ -26,7 +42,7 @@ function Chip({ label, on, onPress }: { label: string; on: boolean; onPress: () 
  */
 export default function EditOrder() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { order } = useOrder(id);
+  const { order, reload } = useOrder(id);
   const [v, setV] = useState<Record<string, string> | null>(null);
   const [pay, setPay] = useState<'cash' | 'postpaid'>('postpaid');
   const [trans, setTrans] = useState<'' | 'auto' | 'manual'>('');
@@ -34,26 +50,33 @@ export default function EditOrder() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // 화면을 열 때의 값 (저장할 때 바뀐 칸만 보내려고)
+  const initial = useRef<Form | null>(null);
+
   useEffect(() => {
     if (!order || v) return;
     const r = order.reserved_at ? kstParts(order.reserved_at) : null;
-    setV({
-      vehicleNumber: order.vehicle_number ?? '', vehicleModel: order.vehicle_model ?? '', vehicleColor: order.vehicle_color ?? '',
-      memo: order.driver_memo ?? '', fare: String(order.fare),
-      pickupDetail: order.pickup.detail ?? '', pickupName: order.pickup.contact_name ?? '', pickupPhone: order.pickup.contact_phone ?? '',
-      dropoffDetail: order.dropoff.detail ?? '', dropoffName: order.dropoff.contact_name ?? '', dropoffPhone: order.dropoff.contact_phone ?? '',
-      date: r ? `${r.y}-${pad(r.m)}-${pad(r.d)}` : '', time: r ? `${pad(r.hh)}:${pad(r.mm)}` : '',
-    });
-    setPay(order.payment_method);
-    setTrans(order.transmission ?? '');
-    setReserveOn(!!order.reserved_at);
+    const first: Form = {
+      v: {
+        vehicleNumber: order.vehicle_number ?? '', vehicleModel: order.vehicle_model ?? '', vehicleColor: order.vehicle_color ?? '',
+        memo: order.driver_memo ?? '', fare: String(order.fare),
+        pickupDetail: order.pickup.detail ?? '', pickupName: order.pickup.contact_name ?? '', pickupPhone: order.pickup.contact_phone ?? '',
+        dropoffDetail: order.dropoff.detail ?? '', dropoffName: order.dropoff.contact_name ?? '', dropoffPhone: order.dropoff.contact_phone ?? '',
+        date: r ? `${r.y}-${pad(r.m)}-${pad(r.d)}` : '', time: r ? `${pad(r.hh)}:${pad(r.mm)}` : '',
+      },
+      pay: order.payment_method, trans: order.transmission ?? '', reserveOn: !!order.reserved_at,
+    };
+    initial.current = first;
+    setV(first.v);
+    setPay(first.pay);
+    setTrans(first.trans);
+    setReserveOn(first.reserveOn);
   }, [order, v]);
 
   if (!order || !v) return <Screen><Notice>불러오는 중…</Notice></Screen>;
   if (order.status !== 'open') return <Screen><Notice tone="danger">배차된 오더는 고칠 수 없어요. 오더 화면의 "변경 요청"을 써 주세요.</Notice></Screen>;
 
   const f = (k: string) => ({ value: v[k], onChangeText: (t: string) => setV(x => ({ ...x!, [k]: t })) });
-  const orNull = (s: string) => (s.trim() === '' ? null : s.trim());
 
   async function save() {
     setError(null);
@@ -66,18 +89,21 @@ export default function EditOrder() {
       if (!reservedAt) { setError('예약 날짜는 2026-11-20, 시간은 14:00 처럼 넣어 주세요.'); return; }
       if (new Date(reservedAt).getTime() <= Date.now()) { setError('예약 시간이 지났어요.'); return; }
     }
+    const done = () => { if (router.canGoBack()) router.back(); else router.replace(`/order/${id}` as Href); };
+    const patch = editPatch(rowOf(initial.current!), rowOf({ v: v!, pay, trans, reserveOn }));
+    if (Object.keys(patch).length === 0) { done(); return; }
     setBusy(true);
-    const { data: changed, error: e } = await supabase.from('orders').update({
-      vehicle_number: v!.vehicleNumber.trim(), vehicle_model: orNull(v!.vehicleModel), vehicle_color: orNull(v!.vehicleColor),
-      transmission: trans || null, driver_memo: orNull(v!.memo), fare, payment_method: pay, reserved_at: reservedAt,
-      pickup_detail: orNull(v!.pickupDetail), pickup_contact_name: orNull(v!.pickupName), pickup_contact_phone: orNull(v!.pickupPhone),
-      dropoff_detail: orNull(v!.dropoffDetail), dropoff_contact_name: orNull(v!.dropoffName), dropoff_contact_phone: orNull(v!.dropoffPhone),
-    }).eq('id', id).eq('status', 'open').select('id');
+    const { data: changed, error: e } = await supabase.from('orders').update(patch).eq('id', id).eq('status', 'open').select('id');
     setBusy(false);
-    // 그 사이 배차되면 서버가 거절하거나(권한) 바뀐 줄이 0개
-    if (e) { setError(errorMessage(e.message)); return; }
-    if (!changed?.length) { setError('그 사이 배차돼서 고치지 못했어요. 오더 화면의 "변경 요청"을 써 주세요.'); return; }
-    if (router.canGoBack()) router.back(); else router.replace(`/order/${id}` as Href);
+    // 그 사이 배차·취소되면 서버가 거절하거나(권한) 바뀐 줄이 0개 → 지금 상태를 다시 읽어 안내
+    if (e) { setError(errorMessage(e.message)); void reload(); return; }
+    if (!changed?.length) {
+      const { data: now } = await supabase.from('orders').select('status').eq('id', id).maybeSingle();
+      setError(editRefusedMessage((now as { status: string } | null)?.status ?? null));
+      void reload();
+      return;
+    }
+    done();
   }
 
   return (
