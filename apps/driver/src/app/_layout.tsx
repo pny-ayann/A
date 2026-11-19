@@ -29,6 +29,8 @@ function Gate() {
         <Stack.Screen name="order/[id]/camera" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="order/[id]/chat" options={{ headerShown: true, title: '관제 문의' }} />
         <Stack.Screen name="order/[id]/fuel" options={{ headerShown: true, title: '주유 등록' }} />
+        <Stack.Screen name="wallet/withdraw" options={{ headerShown: true, title: '출금 신청' }} />
+        <Stack.Screen name="wallet/account" options={{ headerShown: true, title: '받을 계좌' }} />
       </Stack.Protected>
     </Stack>
   );

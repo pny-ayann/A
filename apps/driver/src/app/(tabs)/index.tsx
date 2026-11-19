@@ -17,15 +17,20 @@ export default function OpenOrders() {
   const [grabbing, setGrabbing] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [noLocation, setNoLocation] = useState(false);
+  const [negative, setNegative] = useState(false);
   const pos = useRef<LatLng | null>(null);
 
   const load = useCallback(async (withSpinner = false) => {
     if (withSpinner) setLoading(true);
     pos.current = (await currentPosition()) ?? pos.current;
     setNoLocation(!pos.current);
-    const { data, error } = await supabase.rpc('list_open_orders', { p_lat: pos.current?.lat ?? null, p_lng: pos.current?.lng ?? null });
+    const [{ data, error }, w] = await Promise.all([
+      supabase.rpc('list_open_orders', { p_lat: pos.current?.lat ?? null, p_lng: pos.current?.lng ?? null }),
+      supabase.rpc('wallet_summary'),
+    ]);
     if (error) setMessage(errorMessage(error.message));
     else setRows(sortOpenOrders((data ?? []) as OpenOrder[]));
+    if (!w.error) setNegative((((w.data ?? []) as { balance: number }[])[0]?.balance ?? 0) < 0);
     if (withSpinner) setLoading(false);
   }, []);
 
@@ -60,6 +65,7 @@ export default function OpenOrders() {
         ListHeaderComponent={
           <View style={{ gap: 10 }}>
             <Title>주문 목록</Title>
+            {negative && <Notice tone="danger">충전금이 마이너스라 오더를 잡을 수 없어요. 충전금 탭을 확인해 주세요.</Notice>}
             {noLocation && <Notice>위치를 켜면 내 위치에서 가까운 순으로 보여요.</Notice>}
             {message && <Notice tone="danger">{message}</Notice>}
           </View>
