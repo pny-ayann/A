@@ -22,7 +22,8 @@
 - 지도: 카카오맵 API. 알림: Expo 푸시.
 - 결제: 현금·후불만. 앱 내 카드 결제(토스페이먼츠)는 1단계 제외.
 - 단계: 1단계 오더 흐름 → 2단계 정산.
-- 2단계-1 기사 정산: 충전금은 `wallet_entries` 장부(잔액 칸 없음, 합으로만), 완료 오더 정산은 서버 트리거 `settle_order`가 차이만 적음. 운영 방법은 `supabase/README.md` 8번. 가상계좌·자동 송금은 아직 없음(출금 신청에 자리만 있음). 다음은 2단계-2 업체 월말 정산(부가세 10%).
+- 2단계-1 기사 정산: 충전금은 `wallet_entries` 장부(잔액 칸 없음, 합으로만), 완료 오더 정산은 서버 트리거 `settle_order`가 차이만 적음. 운영 방법은 `supabase/README.md` 8번. 가상계좌·자동 송금은 아직 없음(출금 신청에 자리만 있음).
+- 2단계-2 업체 정산: 관제웹 `/admin/billing`(관리자만). 정산서 금액은 저장 없이 DB 함수 `billing_lines_all` 하나에서 계산(`billing_lines`·`billing_totals`·`billing_summary`·`billing_receivables`), 저장은 입금 체크 `company_payments`(체크 때 금액)뿐. 엑셀은 `exceljs`, `/api/billing/excel`. 세금계산서는 홈택스에서 직접. 운영은 `supabase/README.md` 9번.
 - GitHub 저장소: https://github.com/pny-ayann/A (브랜치 main)
 
 ## 사용자와 일하는 방식

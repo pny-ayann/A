@@ -18,6 +18,7 @@ const messages: Record<string, string> = {
   INVALID_AMENDMENT: '도착지 변경, 경유지 추가, 미션 추가일 때만 바꿀 수 있어요.',
   CANCEL_NOT_ALLOWED: '배차된 오더는 관제에 문의해서 취소해 주세요.',
   FORBIDDEN: '권한이 없어요.',
+  AMOUNT_CHANGED: '그 사이 청구금액이 바뀌었어요. 새로고침해서 금액을 다시 확인한 뒤 체크해 주세요.',
   NOT_FOUND: '오더를 찾을 수 없어요.',
   INVALID_LOGIN_ID: '아이디는 영문 소문자, 숫자, _ 로 3~20자예요.',
 };
