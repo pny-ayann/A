@@ -10,7 +10,7 @@ export type Stop = {
   contact_name: string | null; contact_phone: string | null;
 };
 export type MyOrder = {
-  id: string; kind: 'takson' | 'daeri'; status: OrderStatus; reserved_at: string | null; assigned_at: string | null;
+  id: string; order_no: string; kind: 'takson' | 'daeri'; status: OrderStatus; reserved_at: string | null; assigned_at: string | null;
   driver_id: string | null; fare: number; payment_method: 'cash' | 'postpaid';
   vehicle_number: string | null; vehicle_model: string | null; vehicle_color: string | null; transmission: 'auto' | 'manual' | null;
   driver_memo: string | null;

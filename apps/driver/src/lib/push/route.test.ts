@@ -16,3 +16,7 @@ test('모양이 이상하면 null', () => {
   expect(routeForNotification({ screen: 'order', orderId: '../x' })).toBeNull();
   expect(routeForNotification({ screen: 'settings', orderId: 'O1' })).toBeNull();
 });
+
+test('출금 처리 알림은 충전금 탭으로', () => {
+  expect(routeForNotification({ screen: 'wallet' })).toBe('/wallet');
+});

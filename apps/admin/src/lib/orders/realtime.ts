@@ -3,6 +3,7 @@ import type { DispatchMode, OrderKind, OrderStatus, PaymentMethod } from '@takso
 /** 관제판 한 줄에 필요한 오더 컬럼 */
 export type OrderRow = {
   id: string;
+  order_no: string;
   status: OrderStatus;
   kind: OrderKind;
   company_id: string;
@@ -22,7 +23,7 @@ export type OrderRow = {
 };
 
 export const ORDER_ROW_COLUMNS =
-  'id, status, kind, company_id, driver_id, reserved_at, pickup_area, dropoff_area, pickup_lat, pickup_lng, dropoff_lat, dropoff_lng, fare, payment_method, dispatch_mode, created_at, updated_at';
+  'id, order_no, status, kind, company_id, driver_id, reserved_at, pickup_area, dropoff_area, pickup_lat, pickup_lng, dropoff_lat, dropoff_lng, fare, payment_method, dispatch_mode, created_at, updated_at';
 
 export type OrderChange = {
   eventType: 'INSERT' | 'UPDATE' | 'DELETE';

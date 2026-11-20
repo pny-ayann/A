@@ -9,6 +9,8 @@ export type Result = { ok: boolean; message: string };
 export type Candidate = {
   driver_id: string; name: string | null; phone: string | null;
   distance_km: number | null; active_count: number; conflicts: string[];
+  /** 충전금 잔액 (마이너스면 배정 불가) */
+  balance: number | null;
 };
 
 const LOGIN_NEEDED: Result = { ok: false, message: '로그인이 필요해요.' };
@@ -46,7 +48,10 @@ export async function loadCandidates(orderId: string): Promise<{ ok: true; list:
   if (!supabase) return LOGIN_NEEDED as { ok: false; message: string };
   const { data, error } = await supabase.rpc('staff_driver_candidates', { p_order_id: orderId });
   if (error) return { ok: false, message: errorMessage(error.message) };
-  return { ok: true, list: (data ?? []) as Candidate[] };
+  const list = (data ?? []) as Omit<Candidate, 'balance'>[];
+  const balances = await Promise.all(list.map(c => supabase.rpc('wallet_summary', { p_driver: c.driver_id })
+    .then(r => (((r.data ?? []) as { balance: number }[])[0]?.balance ?? null))));
+  return { ok: true, list: list.map((c, i) => ({ ...c, balance: balances[i] ?? null })) };
 }
 
 export async function assignDriver(orderId: string, driverId: string): Promise<Result> {

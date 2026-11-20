@@ -4,7 +4,7 @@ import { applyChange, boardSince, filterOrders, type OrderRow } from './realtime
 
 function row(id: string, hhmm: string, status: OrderStatus = 'open', extra: Partial<OrderRow> = {}): OrderRow {
   return {
-    id, status, kind: 'takson', company_id: 'c1', driver_id: null, reserved_at: null,
+    id, order_no: `1117-${id}`, status, kind: 'takson', company_id: 'c1', driver_id: null, reserved_at: null,
     pickup_area: '중구', dropoff_area: '강남구', pickup_lat: null, pickup_lng: null, dropoff_lat: null, dropoff_lng: null,
     fare: 20000, payment_method: 'postpaid', dispatch_mode: 'open',
     created_at: `2026-11-17T${hhmm}:00Z`, updated_at: `2026-11-17T${hhmm}:00Z`,

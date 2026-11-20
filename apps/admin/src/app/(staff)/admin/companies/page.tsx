@@ -2,7 +2,7 @@ import { AccountFields, ActionForm, inputCls } from '@/components/ActionForm';
 import { issueAccount, saveCompany } from '@/lib/accounts/actions';
 import { getStaffProfile, serverClient } from '@/lib/supabase/server';
 
-type Company = { id: string; name: string; phone: string | null; default_payment: string; fuel_billing: string };
+type Company = { id: string; name: string; phone: string | null; default_payment: string; fuel_billing: string; fuel_payer_cash: string; fuel_payer_postpaid: string };
 
 function CompanyFields({ c }: { c?: Company }) {
   return (
@@ -18,6 +18,14 @@ function CompanyFields({ c }: { c?: Company }) {
         <option value="customer">주유비 고객 청구</option>
         <option value="company">주유비 회사 부담</option>
       </select>
+      <select name="fuel_payer_cash" defaultValue={c?.fuel_payer_cash ?? 'company'} aria-label="현금 오더 주유비 지급" className={inputCls}>
+        <option value="company">현금 오더 주유비: 업체 지급</option>
+        <option value="office">현금 오더 주유비: 상황실 지급</option>
+      </select>
+      <select name="fuel_payer_postpaid" defaultValue={c?.fuel_payer_postpaid ?? 'office'} aria-label="후불 오더 주유비 지급" className={inputCls}>
+        <option value="office">후불 오더 주유비: 상황실 지급</option>
+        <option value="company">후불 오더 주유비: 업체 지급</option>
+      </select>
     </>
   );
 }
@@ -30,7 +38,7 @@ export default async function CompaniesPage() {
   const isAdmin = (await getStaffProfile())?.staff_level === 'admin';
   const supabase = await serverClient();
   const [companies, staff] = await Promise.all([
-    supabase.from('companies').select('id, name, phone, default_payment, fuel_billing').order('name'),
+    supabase.from('companies').select('id, name, phone, default_payment, fuel_billing, fuel_payer_cash, fuel_payer_postpaid').order('name'),
     supabase.from('profiles').select('id, login_id, name, phone, company_id').eq('role', 'customer').order('login_id'),
   ]);
   const list = (companies.data ?? []) as Company[];

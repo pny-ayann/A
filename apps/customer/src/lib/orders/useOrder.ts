@@ -8,7 +8,7 @@ export type Stop = {
   contact_name: string | null; contact_phone: string | null;
 };
 export type Order = {
-  id: string; company_id: string; kind: 'takson' | 'daeri'; status: OrderStatus; reserved_at: string | null;
+  id: string; order_no: string; company_id: string; kind: 'takson' | 'daeri'; status: OrderStatus; reserved_at: string | null;
   driver_id: string | null; assigned_at: string | null; fare: number; payment_method: 'cash' | 'postpaid'; distance_km: number | null;
   vehicle_number: string | null; vehicle_model: string | null; vehicle_color: string | null; transmission: 'auto' | 'manual' | null;
   driver_memo: string | null; created_at: string;

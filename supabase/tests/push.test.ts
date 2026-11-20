@@ -28,7 +28,7 @@ describe('새 오더', () => {
     expect(tokens(r[0]!.body)).toEqual(['T_d', 'T_d2']);
     expect(r[0]!.body[0]).toMatchObject({
       title: '새 오더',
-      body: '[예약] 11/18 14:00 · 중구 태평로1가 → 강남구 역삼동 · 35,000원',
+      body: expect.stringMatching(/^\[예약\] 11\/18 14:00 · \[\d{4}-001\] 중구 태평로1가 → 강남구 역삼동 · 35,000원$/),
       data: { orderId: o, screen: 'list' },
     });
   });

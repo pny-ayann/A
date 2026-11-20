@@ -3,6 +3,7 @@ import { kstShort, won } from '../time';
 /** RPC list_open_orders 한 줄 (연락처·전체 주소는 서버가 안 줌) */
 export type OpenOrder = {
   id: string;
+  order_no: string;
   kind: 'takson' | 'daeri';
   reserved_at: string | null;
   pickup_area: string | null;

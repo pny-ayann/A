@@ -48,10 +48,15 @@ export async function saveCompany(_prev: ActionResult, form: FormData): Promise<
     phone: text(form, 'phone') || null,
     default_payment: text(form, 'default_payment'),
     fuel_billing: text(form, 'fuel_billing'),
+    fuel_payer_cash: text(form, 'fuel_payer_cash') || 'company',
+    fuel_payer_postpaid: text(form, 'fuel_payer_postpaid') || 'office',
   };
   if (!row.name) return { ok: false, message: '업체 이름을 넣어 주세요.' };
   if (!['cash', 'postpaid'].includes(row.default_payment)) return { ok: false, message: '결제 방식을 골라 주세요.' };
   if (!['customer', 'company'].includes(row.fuel_billing)) return { ok: false, message: '주유비 부담을 골라 주세요.' };
+  if (![row.fuel_payer_cash, row.fuel_payer_postpaid].every(v => ['company', 'office'].includes(v))) {
+    return { ok: false, message: '주유비 지급 주체를 골라 주세요.' };
+  }
   const r = id
     ? await ctx.supabase.from('companies').update(row).eq('id', id).select('id')
     : await ctx.supabase.from('companies').insert(row).select('id');

@@ -2,7 +2,7 @@ import { expect, test } from 'vitest';
 import { cardView, sortOpenOrders, type OpenOrder } from './list';
 
 const o = (p: Partial<OpenOrder>): OpenOrder => ({
-  id: 'X', kind: 'takson', reserved_at: null, pickup_area: '강남구 역삼동', dropoff_area: '수원시 영통구',
+  id: 'X', order_no: '1119-001', kind: 'takson', reserved_at: null, pickup_area: '강남구 역삼동', dropoff_area: '수원시 영통구',
   fare: 35000, payment_method: 'postpaid', distance_km: null, mission_names: [], ...p,
 });
 

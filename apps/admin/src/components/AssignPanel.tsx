@@ -56,7 +56,7 @@ export function AssignPanel({ orderId, status, driverName }: { orderId: string; 
               : (
                 <table className="mt-2 w-full text-sm">
                   <thead className="text-left text-slate-500">
-                    <tr><th>이름</th><th>출발지까지</th><th>진행 중</th><th>주의</th><th /></tr>
+                    <tr><th>이름</th><th>출발지까지</th><th>진행 중</th><th>충전금</th><th>주의</th><th /></tr>
                   </thead>
                   <tbody>
                     {list.map(c => (
@@ -64,6 +64,9 @@ export function AssignPanel({ orderId, status, driverName }: { orderId: string; 
                         <td className="py-1">{c.name ?? '이름 없음'}</td>
                         <td>{c.distance_km == null ? '위치 모름' : `${c.distance_km.toFixed(1)}km`}</td>
                         <td>{c.active_count}건</td>
+                        <td className={c.balance != null && c.balance < 0 ? 'font-semibold text-red-600' : ''}>
+                          {c.balance == null ? '-' : `${c.balance.toLocaleString('ko-KR')}원${c.balance < 0 ? ' (배정 불가)' : ''}`}
+                        </td>
                         <td>{c.conflicts.map(w => CONFLICT_LABEL[w] ?? w).join(', ')}</td>
                         <td className="text-right">
                           <button type="button" onClick={() => pick(c)} disabled={pending} className={btn}>배차</button>
