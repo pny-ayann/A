@@ -47,6 +47,7 @@
 ## 금지/주의
 - 비밀 키·비밀번호(.env)는 절대 GitHub에 올리지 않는다.
 - 커밋·푸시는 사용자가 요청할 때만 한다.
+- 훅 `.claude/hooks/guard.mjs`: 커밋·푸시 전 비밀값 검사, 이미 적용한 마이그레이션 수정 금지. 서버에 `db push`한 뒤에는 `supabase/.applied-migration` 번호를 올린다. 훅이 막으면 우회하지 말고 사용자에게 알린다.
 
 ## Agent skills
 

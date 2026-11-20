@@ -18,6 +18,11 @@
 그다음 `npm run seed:dev`로 개발용 계정(dev_admin, dev_op, dev_cust_a, dev_cust_b, dev_driver1, dev_driver2),
 업체, 요금표, 미션을 만들고, `npm run check:dev`로 권한 규칙이 실제 서버에서 동작하는지 확인해요.
 
+**적용한 뒤 꼭:** `supabase/.applied-migration`에 적용한 마지막 파일 번호(예: `20261120000023`)를 적어요.
+Claude Code 훅(`.claude/hooks/guard.mjs`)이 이 번호 이하의 마이그레이션 파일은 고치지 못하게 막아요
+(서버와 코드가 몰래 달라지는 것을 막기 위해). 바꿀 게 있으면 다음 번호의 새 파일을 만들어요.
+같은 훅이 `git commit`·`git push` 전에 `.env`, `google-services.json`, 비밀 키처럼 생긴 값을 찾으면 멈춰요.
+
 **직접 하는 방법 (SQL 편집기)**: `supabase/migrations` 폴더의 파일을 **번호 순서대로** 넣어요.
 
 1. 왼쪽 메뉴 **SQL Editor** → **New query**
