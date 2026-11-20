@@ -2,6 +2,10 @@
 -- 줄은 billing_lines_all 하나에서만 나오고, 합계·화면·엑셀·입금 체크·미수금이 모두 이것을 쓴다.
 -- 달은 한국 시간(Asia/Seoul) 기준. 관리자만.
 
+-- 정산 계산용 색인: 줄마다 영수증 합, 달마다 완료 오더
+create index if not exists fuel_receipts_order_id_idx on public.fuel_receipts(order_id);
+create index orders_postpaid_completed_idx on public.orders(completed_at) where status = 'completed' and payment_method = 'postpaid';
+
 -- 그 달(한국 시간) 모든 업체의 정산서 줄. 내부용: 관리자 검사는 부르는 쪽에서.
 create function public.billing_lines_all(p_month date)
 returns table(company_id uuid, order_id uuid, order_no text, completed_at timestamptz, pickup_area text,
@@ -51,7 +55,7 @@ begin
       select l.company_id, sum(l.fare)::int as supply, sum(l.fuel)::int as fuel
       from public.billing_lines_all(p_month) l group by l.company_id
     )
-    select s.company_id, c.name, s.supply, (s.supply * 10 / 100), s.fuel, s.supply + (s.supply * 10 / 100) + s.fuel
+    select s.company_id, c.name, s.supply, s.supply / 10, s.fuel, s.supply + s.supply / 10 + s.fuel  -- 10% 버림 (supply*10은 2.15억에서 넘침)
     from s join public.companies c on c.id = s.company_id
     order by c.name;
 end $$;
@@ -75,7 +79,8 @@ create policy company_payments_select on public.company_payments for select to a
 create trigger audit_company_payments after insert or update or delete on public.company_payments
   for each row execute function public.audit_row();
 
-create function public.set_company_paid(p_company uuid, p_month date, p_paid boolean) returns void
+-- p_expected = 관리자가 화면에서 본 청구금액. 그 사이 바뀌었으면 체크하지 않는다(늘어난 돈이 조용히 사라지지 않게).
+create function public.set_company_paid(p_company uuid, p_month date, p_paid boolean, p_expected int) returns void
 language plpgsql security definer set search_path = public as $$
 declare
   v_month date := date_trunc('month', p_month)::date;
@@ -87,6 +92,7 @@ begin
     return;
   end if;
   select coalesce((select t.total from public.billing_totals(v_month) t where t.company_id = p_company), 0) into v_total;
+  if v_total is distinct from p_expected then raise exception 'AMOUNT_CHANGED'; end if;
   insert into public.company_payments(company_id, month, amount) values (p_company, v_month, v_total)
   on conflict (company_id, month) do update
     set amount = excluded.amount, checked_at = now(), checked_by = auth.uid();
@@ -134,5 +140,5 @@ begin
   end loop;
 end $$;
 
-grant execute on function public.set_company_paid(uuid, date, boolean), public.billing_summary(date),
+grant execute on function public.set_company_paid(uuid, date, boolean, int), public.billing_summary(date),
   public.billing_receivables() to authenticated;

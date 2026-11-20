@@ -94,8 +94,12 @@ const summary = async (m: string) =>
 const receivables = async () =>
   (await as(w.db, w.admin, tx => tx.query<Due>(
     'select company_id, company_name, month::text, total, paid_amount, due from billing_receivables()'))).rows;
-const setPaid = (c: string, m: string, paid: boolean, who = w.admin) =>
-  as(w.db, who, tx => tx.query('select set_company_paid($1::uuid, $2::date, $3)', [c, m, paid]));
+const totalOf = async (c: string, m: string) => (await totals(m)).find(t => t.company_id === c)?.total ?? 0;
+/** expected = 관리자가 화면에서 본 청구금액 (안 주면 지금 금액) */
+const setPaid = async (c: string, m: string, paid: boolean, who = w.admin, expected?: number) => {
+  const e = expected ?? (who === w.admin ? await totalOf(c, m) : 0);
+  return as(w.db, who, tx => tx.query('select set_company_paid($1::uuid, $2::date, $3, $4)', [c, m, paid, e]));
+};
 /** 지금(한국 시간)보다 2달 전 달의 1일과, 그 달 안의 완료 시각 */
 const twoMonthsAgo = async () => (await w.db.query<{ m: string; at: string }>(
   `select to_char(d, 'YYYY-MM-DD') as m, ((d + interval '4 day 12 hour')::timestamp at time zone 'Asia/Seoul')::text as at
@@ -173,4 +177,29 @@ test('관리자가 아니면 정산 함수와 입금 표를 못 쓴다', async (
   }
   await expectError(as(w.db, w.op, tx => tx.query(
     `insert into company_payments(company_id, month, amount) values ($1, '2026-12-01', 1)`, [w.A])), 'row-level security');
+});
+
+// ---- 검토 뒤 고침 ----------------------------------------------------------------
+test('화면에서 본 금액과 지금 금액이 다르면 체크하지 않는다', async () => {
+  const o = await done(w.A, 300000);
+  await receipt(o, 50000); // 관리자가 330,000을 본 뒤 주유비가 들어옴
+  await expectError(setPaid(w.A, '2026-11-01', true, w.admin, 330000), 'AMOUNT_CHANGED');
+  expect((await w.db.query('select 1 from company_payments')).rows).toEqual([]);
+  await setPaid(w.A, '2026-11-01', false, w.admin, 999); // 해제는 금액을 보지 않는다
+});
+
+test('한 달 공급가액이 2.15억을 넘어도 계산된다', async () => {
+  await done(w.A, 220000000);
+  expect((await totals('2026-11-01'))[0]).toMatchObject({ supply: 220000000, vat: 22000000, total: 242000000 });
+});
+
+test('정산 계산에 필요한 색인이 있다', async () => {
+  const idx = (await w.db.query<{ indexdef: string }>(
+    `select indexdef from pg_indexes where tablename in ('fuel_receipts', 'orders')`)).rows.map(r => r.indexdef).join('\n');
+  expect(idx).toMatch(/ON public\.fuel_receipts USING btree \(order_id\)/);
+  expect(idx).toMatch(/ON public\.orders USING btree \(completed_at\) WHERE/);
+});
+
+test('내부 계산 함수는 로그인한 사용자가 직접 부를 수 없다', async () => {
+  await expectError(as(w.db, w.admin, tx => tx.query(`select * from billing_lines_all('2026-11-01')`)), 'permission denied');
 });

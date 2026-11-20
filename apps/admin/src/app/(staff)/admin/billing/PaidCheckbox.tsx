@@ -3,7 +3,9 @@ import { useState, useTransition } from 'react';
 import { setCompanyPaid } from '@/lib/billing/actions';
 
 /** 입금 체크박스: 누르면 바로 저장, 실패하면 원래대로 돌리고 오류 문구 */
-export function PaidCheckbox({ company, month, paid, label }: { company: string; month: string; paid: boolean; label: string }) {
+export function PaidCheckbox({ company, month, paid, total, label }: {
+  company: string; month: string; paid: boolean; total: number; label: string;
+}) {
   const [on, setOn] = useState(paid);
   const [error, setError] = useState('');
   const [pending, start] = useTransition();
@@ -15,7 +17,7 @@ export function PaidCheckbox({ company, month, paid, label }: { company: string;
           setOn(next);
           setError('');
           start(async () => {
-            const r = await setCompanyPaid(company, month, next);
+            const r = await setCompanyPaid(company, month, next, total);
             if (!r?.ok) { setOn(!next); setError(r?.message ?? '저장하지 못했어요.'); }
           });
         }} />

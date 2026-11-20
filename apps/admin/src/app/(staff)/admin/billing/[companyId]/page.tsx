@@ -77,7 +77,7 @@ export default async function CompanyBillingPage({ params, searchParams }: {
 
       <div className="flex items-center justify-end gap-2 text-sm">
         <span>입금</span>
-        <PaidCheckbox key={`${t.paid_amount}`} company={companyId} month={month} paid={t.paid_amount !== null} label={name} />
+        <PaidCheckbox key={`${t.paid_amount}-${t.total}`} company={companyId} month={month} paid={t.paid_amount !== null} total={t.total} label={name} />
         <PayStatus total={t.total} paidAmount={t.paid_amount} paidAt={t.paid_at} />
       </div>
     </div>

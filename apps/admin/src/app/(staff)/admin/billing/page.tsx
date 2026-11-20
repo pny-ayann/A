@@ -65,7 +65,7 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
                 <td className="text-right font-semibold">{won(r.total)}</td>
                 <td className="pl-4">
                   <span className="inline-flex items-center gap-2">
-                    <PaidCheckbox key={`${r.paid_amount}`} company={r.company_id} month={month} paid={r.paid_amount !== null} label={r.company_name} />
+                    <PaidCheckbox key={`${r.paid_amount}-${r.total}`} company={r.company_id} month={month} paid={r.paid_amount !== null} total={r.total} label={r.company_name} />
                     <PayStatus total={r.total} paidAmount={r.paid_amount} paidAt={r.paid_at} />
                   </span>
                 </td>
