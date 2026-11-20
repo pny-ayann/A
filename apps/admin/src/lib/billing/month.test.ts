@@ -1,4 +1,4 @@
-import { lastMonth, monthRange, monthStart, parseMonth, payState, statementFileName } from './month';
+import { contentDisposition, lastMonth, linesMatchTotal, monthRange, monthStart, parseMonth, payState, statementFileName } from './month';
 
 const now = new Date('2026-11-20T08:00:00Z');
 
@@ -33,4 +33,17 @@ test('입금 상태', () => {
 test('파일 이름에서 못 쓰는 글자를 바꾼다', () => {
   expect(statementFileName(' 개발/상사"A ', '2026-11')).toBe('정산서_개발_상사_A_2026-11.xlsx');
   expect(statementFileName('개발상사A', '2026-11')).toBe('정산서_개발상사A_2026-11.xlsx');
+});
+
+test('내려받기 헤더: (주)·따옴표도 이스케이프하고 영문 대체 이름을 단다', () => {
+  expect(contentDisposition("정산서_(주)개발's_2026-11.xlsx", 'statement_2026-11.xlsx')).toBe(
+    `attachment; filename="statement_2026-11.xlsx"; filename*=UTF-8''${encodeURIComponent('정산서_')}%28%EC%A3%BC%29${encodeURIComponent('개발')}%27s_2026-11.xlsx`);
+});
+
+test('줄 합과 합계가 맞는지 본다', () => {
+  const lines = [{ fare: 100000, fuel: 5000 }, { fare: 50000, fuel: 0 }];
+  expect(linesMatchTotal(lines, { supply: 150000, fuel: 5000 })).toBe(true);
+  expect(linesMatchTotal(lines, { supply: 160000, fuel: 5000 })).toBe(false);
+  expect(linesMatchTotal(lines, { supply: 150000, fuel: 0 })).toBe(false);
+  expect(linesMatchTotal([], { supply: 0, fuel: 0 })).toBe(true);
 });

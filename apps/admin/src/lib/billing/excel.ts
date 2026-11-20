@@ -1,6 +1,6 @@
 import 'server-only';
 import ExcelJS from 'exceljs';
-import { kstDate, monthRange } from './month';
+import { kstDay, monthRange } from './month';
 
 export type BillingLine = {
   order_no: string; completed_at: string; pickup_area: string; dropoff_area: string;
@@ -22,7 +22,8 @@ export async function buildStatement(company: string, m: string, lines: BillingL
   head.values = ['오더 번호', '완료일', '출발', '도착', '차량번호', '미션', '요금', '주유비'];
   head.font = { bold: true };
   for (const l of lines) {
-    const r = ws.addRow([l.order_no, kstDate(l.completed_at), l.pickup_area, l.dropoff_area, l.vehicle_number, l.missions, l.fare, l.fuel]);
+    const r = ws.addRow([l.order_no, kstDay(l.completed_at), l.pickup_area, l.dropoff_area, l.vehicle_number, l.missions, l.fare, l.fuel]);
+    r.getCell(2).numFmt = 'yyyy-mm-dd';
     r.getCell(7).numFmt = NUM;
     r.getCell(8).numFmt = NUM;
   }

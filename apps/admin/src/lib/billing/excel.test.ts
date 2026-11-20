@@ -17,7 +17,10 @@ test('정산서 엑셀: 줄과 합계가 들어간다', async () => {
   expect(ws.getCell('A1').value).toBe('개발상사A');
   expect(ws.getCell('A2').value).toBe('기간 2026-11-01 ~ 2026-11-30');
   expect(ws.getRow(4).values).toEqual([undefined, '오더 번호', '완료일', '출발', '도착', '차량번호', '미션', '요금', '주유비']);
-  expect(ws.getRow(5).values).toEqual([undefined, '1103-001', '2026-11-30', '중구', '강남구', '12가3456', '세차', 300000, 50000]);
+  expect(ws.getCell('B5').value).toEqual(new Date(Date.UTC(2026, 11 - 1, 30)));
+  expect(ws.getCell('B5').numFmt).toBe('yyyy-mm-dd');
+  expect(ws.getCell('B6').value).toEqual(new Date(Date.UTC(2026, 11 - 1, 5)));
+  expect(ws.getRow(5).values).toEqual([undefined, '1103-001', new Date(Date.UTC(2026, 10, 30)), '중구', '강남구', '12가3456', '세차', 300000, 50000]);
   expect(ws.getCell('G5').numFmt).toBe('#,##0');
   expect(ws.getCell('G6').value).toBe(100000);
 
