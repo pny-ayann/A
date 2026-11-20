@@ -35,3 +35,20 @@ export function statementFileName(company: string, m: string): string {
 }
 
 export const kstDate = (iso: string) => kstYmd(new Date(iso));
+
+/** 한국 날짜를 엑셀 날짜 칸 값으로 (시각 없이 그 날 0시 UTC) */
+export function kstDay(iso: string): Date {
+  const [y, m, d] = kstDate(iso).split('-').map(Number) as [number, number, number];
+  return new Date(Date.UTC(y, m - 1, d));
+}
+
+/** 내려받기 헤더. encodeURIComponent가 남기는 ' ( ) * 도 이스케이프하고(RFC 5987), 옛 프로그램용 영문 이름도 단다 */
+export function contentDisposition(fileName: string, asciiFallback: string): string {
+  const enc = encodeURIComponent(fileName).replace(/['()*]/g, c => `%${c.charCodeAt(0).toString(16).toUpperCase()}`);
+  return `attachment; filename="${asciiFallback}"; filename*=UTF-8''${enc}`;
+}
+
+/** 줄의 요금·주유비 합이 합계와 같은지 (엑셀 줄과 합계를 따로 불러오는 사이 오더가 고쳐졌는지 확인) */
+export function linesMatchTotal(lines: { fare: number; fuel: number }[], t: { supply: number; fuel: number }): boolean {
+  return lines.reduce((a, l) => a + l.fare, 0) === t.supply && lines.reduce((a, l) => a + l.fuel, 0) === t.fuel;
+}

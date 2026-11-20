@@ -45,7 +45,7 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
       </p>
       {failed && <p className="text-sm text-red-600">정산 금액을 불러오지 못했어요. 잠시 뒤 새로고침해 주세요.</p>}
 
-      {rows.length === 0 ? (
+      {sum.error ? null : rows.length === 0 ? (
         <p className="text-sm text-slate-500">이 달에는 정산할 후불 오더가 없어요.</p>
       ) : (
         <table className="w-full text-sm">
@@ -82,7 +82,7 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
       <section className="space-y-2">
         <h2 className="font-semibold">미수금 합계 {won(dueTotal)}</h2>
         <p className="text-xs text-slate-500">지난 달까지 아직 다 받지 못한 금액이에요. 이번 달은 진행 중이라 넣지 않아요.</p>
-        {dueList.length === 0 ? (
+        {dues.error ? null : dueList.length === 0 ? (
           <p className="text-sm text-slate-500">미수금이 없어요.</p>
         ) : (
           <ul className="text-sm">

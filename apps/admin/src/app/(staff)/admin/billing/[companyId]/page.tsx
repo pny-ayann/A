@@ -25,6 +25,7 @@ export default async function CompanyBillingPage({ params, searchParams }: {
   ]);
   const name = (company.data as { name: string } | null)?.name;
   if (!name) return <p className="text-sm text-slate-500">업체를 찾을 수 없어요.</p>;
+  const failed = Boolean(lines.error || sum.error);
   const list = (lines.data ?? []) as BillingLine[];
   const t = ((sum.data ?? []) as Row[]).find(r => r.company_id === companyId)
     ?? { supply: 0, vat: 0, fuel: 0, total: 0, paid_amount: null, paid_at: null };
@@ -38,9 +39,9 @@ export default async function CompanyBillingPage({ params, searchParams }: {
           className="rounded bg-blue-600 px-3 py-1 text-sm font-semibold text-white">엑셀 내려받기</a>
       </div>
       <p className="text-sm text-slate-600">기간 {monthRange(month)}</p>
-      {(lines.error || sum.error) && <p className="text-sm text-red-600">정산서를 불러오지 못했어요. 잠시 뒤 새로고침해 주세요.</p>}
+      {failed && <p className="text-sm text-red-600">정산서를 불러오지 못했어요. 잠시 뒤 새로고침해 주세요.</p>}
 
-      {list.length === 0 ? (
+      {failed ? null : list.length === 0 ? (
         <p className="text-sm text-slate-500">이 달에는 정산할 후불 오더가 없어요.</p>
       ) : (
         <table className="w-full text-sm">
