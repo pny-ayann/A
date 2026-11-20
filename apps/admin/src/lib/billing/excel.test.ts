@@ -12,7 +12,7 @@ test('정산서 엑셀: 줄과 합계가 들어간다', async () => {
   ], { supply: 400000, vat: 40000, fuel: 50000, total: 490000 });
 
   const wb = new ExcelJS.Workbook();
-  await wb.xlsx.load(buf);
+  await wb.xlsx.load(buf as unknown as ArrayBuffer); // exceljs 타입이 새 Buffer 타입을 모름
   const ws = wb.getWorksheet('정산서')!;
   expect(ws.getCell('A1').value).toBe('개발상사A');
   expect(ws.getCell('A2').value).toBe('기간 2026-11-01 ~ 2026-11-30');

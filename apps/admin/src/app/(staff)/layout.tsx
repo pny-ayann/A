@@ -15,6 +15,7 @@ const adminMenu = [
   { href: '/admin/drivers', label: '기사 관리' },
   { href: '/admin/wallets', label: '충전금' },
   { href: '/admin/withdrawals', label: '출금 신청' },
+  { href: '/admin/billing', label: '업체 정산' },
   { href: '/admin/staff', label: '직원 계정' },
   { href: '/admin/fares', label: '요금표·미션' },
   { href: '/admin/settings', label: '운영 설정' },
