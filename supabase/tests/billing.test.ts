@@ -85,4 +85,92 @@ test('totals는 업체별로 나뉘고 줄 합과 같다', async () => {
   expect(await totals('2026-10-01')).toEqual([]);
 });
 
-void expectError;
+// ---- 입금 체크와 미수금 ----------------------------------------------------------
+type Sum = { company_id: string; total: number; paid_amount: number | null; paid_at: Date | null };
+type Due = { company_id: string; company_name: string; month: string; total: number; paid_amount: number | null; due: number };
+
+const summary = async (m: string) =>
+  (await as(w.db, w.admin, tx => tx.query<Sum>('select * from billing_summary($1::date)', [m]))).rows;
+const receivables = async () =>
+  (await as(w.db, w.admin, tx => tx.query<Due>(
+    'select company_id, company_name, month::text, total, paid_amount, due from billing_receivables()'))).rows;
+const setPaid = (c: string, m: string, paid: boolean, who = w.admin) =>
+  as(w.db, who, tx => tx.query('select set_company_paid($1::uuid, $2::date, $3)', [c, m, paid]));
+/** 지금(한국 시간)보다 2달 전 달의 1일과, 그 달 안의 완료 시각 */
+const twoMonthsAgo = async () => (await w.db.query<{ m: string; at: string }>(
+  `select to_char(d, 'YYYY-MM-DD') as m, ((d + interval '4 day 12 hour')::timestamp at time zone 'Asia/Seoul')::text as at
+   from (select date_trunc('month', now() at time zone 'Asia/Seoul') - interval '2 month' as d) x`)).rows[0]!;
+
+test('체크하면 그때 청구금액이 저장되고 summary에 보인다', async () => {
+  await done(w.A, 300000);
+  await setPaid(w.A, '2026-11-15', true);
+  const [s] = await summary('2026-11-01');
+  expect(s).toMatchObject({ company_id: w.A, total: 330000, paid_amount: 330000 });
+  expect(s!.paid_at).not.toBeNull();
+});
+
+test('체크 해제하면 줄이 지워지고 변경 기록에 남는다', async () => {
+  await done(w.A, 300000);
+  await setPaid(w.A, '2026-11-01', true);
+  await setPaid(w.A, '2026-11-01', false);
+  expect((await w.db.query('select 1 from company_payments')).rows).toEqual([]);
+  expect((await w.db.query<{ action: string }>(
+    `select action from audit_log where table_name = 'company_payments' order by created_at, action desc`)).rows.map(r => r.action))
+    .toEqual(['INSERT', 'DELETE']);
+  expect((await summary('2026-11-01'))[0]).toMatchObject({ total: 330000, paid_amount: null });
+});
+
+test('다시 체크하면 새 금액으로 바뀐다', async () => {
+  await done(w.A, 300000);
+  await setPaid(w.A, '2026-11-01', true);
+  await done(w.A, 100000);
+  expect((await summary('2026-11-01'))[0]).toMatchObject({ total: 440000, paid_amount: 330000 });
+  await setPaid(w.A, '2026-11-01', true);
+  expect((await summary('2026-11-01'))[0]).toMatchObject({ total: 440000, paid_amount: 440000 });
+});
+
+test('체크 뒤 늘어난 차액만 미수금', async () => {
+  const { m, at } = await twoMonthsAgo();
+  await done(w.A, 300000, at);
+  await setPaid(w.A, m, true);
+  expect(await receivables()).toEqual([]);
+  await done(w.A, 100000, at);
+  expect(await receivables()).toEqual([
+    { company_id: w.A, company_name: '상사A', month: m, total: 440000, paid_amount: 330000, due: 110000 },
+  ]);
+});
+
+test('체크 뒤 줄면 미수금이 아니다', async () => {
+  const { m, at } = await twoMonthsAgo();
+  const o = await done(w.A, 300000, at);
+  await setPaid(w.A, m, true);
+  await w.db.query(`update orders set status = 'cancelled' where id = $1`, [o]);
+  expect(await receivables()).toEqual([]);
+  expect(await summary(m)).toEqual([
+    expect.objectContaining({ company_id: w.A, total: 0, paid_amount: 330000 }),
+  ]);
+});
+
+test('미입금은 청구금액 전부, 이번 달은 미수금에 안 들어간다', async () => {
+  const { m, at } = await twoMonthsAgo();
+  await done(w.B, 150000, at);
+  await done(w.A, 300000, new Date().toISOString());
+  expect(await receivables()).toEqual([
+    { company_id: w.B, company_name: '상사B', month: m, total: 165000, paid_amount: null, due: 165000 },
+  ]);
+});
+
+test('관리자가 아니면 정산 함수와 입금 표를 못 쓴다', async () => {
+  await done(w.A, 300000);
+  await setPaid(w.A, '2026-11-01', true);
+  for (const who of [w.op, w.d, w.a]) {
+    await expectError(as(w.db, who, tx => tx.query(`select * from billing_lines($1::uuid, '2026-11-01')`, [w.A])), 'FORBIDDEN');
+    await expectError(as(w.db, who, tx => tx.query(`select * from billing_totals('2026-11-01')`)), 'FORBIDDEN');
+    await expectError(as(w.db, who, tx => tx.query(`select * from billing_summary('2026-11-01')`)), 'FORBIDDEN');
+    await expectError(as(w.db, who, tx => tx.query('select * from billing_receivables()')), 'FORBIDDEN');
+    await expectError(setPaid(w.A, '2026-11-01', false, who), 'FORBIDDEN');
+    expect((await as(w.db, who, tx => tx.query('select * from company_payments'))).rows).toEqual([]);
+  }
+  await expectError(as(w.db, w.op, tx => tx.query(
+    `insert into company_payments(company_id, month, amount) values ($1, '2026-12-01', 1)`, [w.A])), 'row-level security');
+});
