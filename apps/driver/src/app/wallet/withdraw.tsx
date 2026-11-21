@@ -13,6 +13,7 @@ export default function Withdraw() {
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const noAccount = !!summary && !account; // summary와 account는 같이 불러오므로, 불러오기 전엔 '계좌 없음'으로 보지 않는다
 
   async function send() {
     setError(null);
@@ -33,7 +34,7 @@ export default function Withdraw() {
         <Body>출금 가능 {summary ? won(summary.withdrawable) : '…'}</Body>
         {account
           ? <Body sub>받을 계좌: {account.bank} {account.number} ({account.holder})</Body>
-          : <Notice tone="danger">받을 계좌를 먼저 등록해 주세요.</Notice>}
+          : noAccount && <Notice tone="danger">받을 계좌를 먼저 등록해 주세요.</Notice>}
       </Card>
       <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-end' }}>
         <View style={{ flex: 3 }}>
@@ -44,8 +45,8 @@ export default function Withdraw() {
         </View>
       </View>
       {!!error && <Notice tone="danger">{error}</Notice>}
-      {account
-        ? <BigButton label="출금 신청" busy={busy} onPress={() => void send()} disabled={!text} />
+      {!noAccount
+        ? <BigButton label="출금 신청" busy={busy} onPress={() => void send()} disabled={!text || !account} />
         : <BigButton label="계좌 등록하러 가기" onPress={() => router.replace('/wallet/account' as Href)} />}
       <Body sub>신청한 금액은 바로 잔액에서 빠지고, 관리자가 이체하면 알림이 와요. 거절되면 다시 돌아와요.</Body>
     </Screen>
