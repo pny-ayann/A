@@ -23,7 +23,8 @@ function loadPostcode(): Promise<void> {
   return postcodeLoading;
 }
 
-const input = 'rounded border px-2 py-1 text-sm';
+const input = 'rounded border px-2 py-1 text-sm font-normal';
+const fieldCls = 'flex flex-col gap-0.5 text-xs font-medium text-slate-600';
 
 /** 주소 한 칸: 검색(우편번호 팝업) → 좌표·동네 자동, 상세주소, 연락처 */
 export function AddressPicker({ label, value, onChange, onRemove }: {
@@ -64,21 +65,21 @@ export function AddressPicker({ label, value, onChange, onRemove }: {
   return (
     <fieldset className="rounded border p-3">
       <legend className="px-1 text-sm font-semibold">{label}</legend>
-      <div className="flex flex-wrap items-center gap-2">
-        <input aria-label={`${label} 주소`} value={value.address} placeholder="주소"
+      <div className="flex flex-wrap items-end gap-2">
+        <label className={`${fieldCls} min-w-0 flex-1`}>주소<input aria-label={`${label} 주소`} value={value.address}
           onChange={e => { latest.current++; setNote(null); onChange({ address: e.target.value, area: null, lat: null, lng: null }); }}
           onBlur={e => { if (e.target.value.trim() && value.lat === null) void setAddress(e.target.value); }}
-          className={`${input} min-w-0 flex-1`} />
+          className={`${input} w-full text-ink`} /></label>
         <button type="button" onClick={search} className="rounded border px-3 py-1 text-sm hover:bg-slate-50">주소 검색</button>
         {onRemove && <button type="button" onClick={onRemove} className="text-sm text-red-600 hover:underline">빼기</button>}
       </div>
       <div className="mt-2 flex flex-wrap gap-2">
-        <input aria-label={`${label} 상세주소`} value={value.detail} placeholder="상세주소 (동·호수, 주차 위치)"
-          onChange={e => onChange({ detail: e.target.value })} className={`${input} min-w-0 flex-1`} />
-        <input aria-label={`${label} 담당자`} value={value.contactName} placeholder="담당자"
-          onChange={e => onChange({ contactName: e.target.value })} className={`${input} w-28`} />
-        <input aria-label={`${label} 연락처`} value={value.contactPhone} placeholder="연락처"
-          onChange={e => onChange({ contactPhone: e.target.value })} className={`${input} w-36`} />
+        <label className={`${fieldCls} min-w-0 flex-1`}>상세주소<input aria-label={`${label} 상세주소`} value={value.detail} placeholder="동·호수, 주차 위치"
+          onChange={e => onChange({ detail: e.target.value })} className={`${input} w-full text-ink`} /></label>
+        <label className={`${fieldCls} w-28`}>담당자<input aria-label={`${label} 담당자`} value={value.contactName}
+          onChange={e => onChange({ contactName: e.target.value })} className={`${input} w-full text-ink`} /></label>
+        <label className={`${fieldCls} w-36`}>연락처<input aria-label={`${label} 연락처`} value={value.contactPhone}
+          onChange={e => onChange({ contactPhone: e.target.value })} className={`${input} w-full text-ink`} /></label>
       </div>
       <div className="mt-1 text-xs text-slate-500">
         {value.address ? (note ?? (value.area ? `동네: ${value.area}` : '위치 확인 전')) : ''}

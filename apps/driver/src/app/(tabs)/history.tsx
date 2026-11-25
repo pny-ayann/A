@@ -59,7 +59,7 @@ export default function History() {
               <Total title="오늘" count={sum.today.count} amount={sum.today.sum} />
               <Total title="이번 달" count={sum.month.count} amount={sum.month.sum} />
             </View>
-            <Body sub>요금 합계예요. 수수료를 뺀 금액은 정산 기능(2단계)에서 보여요.</Body>
+            <Body sub>요금 합계예요. 수수료를 뺀 금액은 충전금 탭에서 볼 수 있어요.</Body>
             <Body style={{ fontWeight: '700' }}>최근 완료</Body>
           </View>
         }

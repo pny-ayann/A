@@ -66,7 +66,7 @@ export default async function WalletsPage() {
               <td className={`text-right font-semibold ${sums[i]!.balance < 0 ? 'text-red-600' : ''}`}>{won(sums[i]!.balance)}</td>
               <td className="text-right">{won(sums[i]!.withdrawable)}</td>
               <td className="text-right text-slate-500">{won(sums[i]!.pending)}</td>
-              <td className="text-right"><Link href={`/admin/wallets/${d.id}`} className="text-blue-700 underline">장부</Link></td>
+              <td className="text-right"><Link href={`/admin/wallets/${d.id}`} className="text-road underline">장부</Link></td>
             </tr>
           ))}
         </tbody>

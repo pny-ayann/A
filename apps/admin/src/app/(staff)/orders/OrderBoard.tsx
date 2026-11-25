@@ -116,7 +116,7 @@ export function OrderBoard({ initialOrders, companies, drivers, alertMin, initia
             const count = s === 'all' ? base.length : base.filter(o => o.status === s).length;
             return (
               <button key={s} type="button" role="tab" aria-selected={tab === s} onClick={() => setTab(s)}
-                className={`rounded border px-3 py-1 ${tab === s ? 'bg-slate-800 text-white' : 'bg-white hover:bg-slate-50'}`}>
+                className={`rounded border px-3 py-1 ${tab === s ? 'bg-ink text-white' : 'bg-white hover:bg-slate-50'}`}>
                 {s === 'all' ? '전체' : STATUS_LABEL[s]} {count}
               </button>
             );
@@ -149,7 +149,7 @@ export function OrderBoard({ initialOrders, companies, drivers, alertMin, initia
         <p className="mt-1 text-xs text-slate-500">진행 중인 오더와 최근 7일 오더를 보여 줘요. 줄을 누르면 지도에 표시돼요.</p>
       </div>
 
-      <div className="flex w-[38%] shrink-0 flex-col">
+      <div className="flex w-[26%] min-w-[300px] shrink-0 flex-col">
         <div className="mb-2 text-sm text-slate-600">
           {selected
             ? `${companyName(selected.company_id)} · ${selected.pickup_area ?? '?'} → ${selected.dropoff_area ?? '?'}`

@@ -50,7 +50,7 @@ export function StatusPanel({ orderId, status, hasDriver, missing }: {
           placeholder={required ? '사유 (필수)' : '사유 (선택)'}
           className={`${input} min-w-0 flex-1 ${required && !reason.trim() ? 'border-red-400' : ''}`} />
         <button type="button" onClick={submit} disabled={pending || !to || (required && !reason.trim())}
-          className="rounded bg-slate-800 px-3 py-1 text-sm text-white disabled:opacity-50">
+          className="rounded bg-ink px-3 py-1 text-sm text-white disabled:opacity-50">
           {pending ? '처리 중…' : '바꾸기'}
         </button>
       </div>

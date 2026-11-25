@@ -28,6 +28,8 @@ export function PhotoGrid({ photos, receipts }: { photos: SignedPhoto[]; receipt
       {(['pickup', 'dropoff'] as const).map(phase => (
         <div key={phase}>
           <h3 className="mb-1 text-sm font-semibold">{phase === 'pickup' ? '출발 사진' : '도착 사진'}</h3>
+          {/* 한 장도 없으면 빈 칸 5개 대신 한 줄로 (일부만 있을 때는 빠진 칸을 보여 준다) */}
+          {!photos.some(p => p.phase === phase) ? <p className="text-xs text-slate-500">아직 사진이 없어요.</p> : (
           <div className="grid grid-cols-5 gap-2">
             {PHOTO_SLOTS.map(slot => {
               const p = find(phase, slot);
@@ -39,6 +41,7 @@ export function PhotoGrid({ photos, receipts }: { photos: SignedPhoto[]; receipt
               );
             })}
           </div>
+          )}
         </div>
       ))}
       {extras.length > 0 && (

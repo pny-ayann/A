@@ -23,6 +23,17 @@ export function sortOpenOrders(rows: OpenOrder[]): OpenOrder[] {
   return [...normal, ...reserved];
 }
 
+const squash = (s: string | null) => (s ?? '').replace(/\s+/g, '');
+
+/** 출발지·도착지 동네 이름에 검색 글자가 들어 있는 오더만 (띄어쓰기 무시) */
+export function searchOrders(rows: OpenOrder[], from: string, to: string): OpenOrder[] {
+  const f = squash(from), t = squash(to);
+  return rows.filter(r => squash(r.pickup_area).includes(f) && squash(r.dropoff_area).includes(t));
+}
+
+/** 금액 큰 순 */
+export const sortByFare = (rows: OpenOrder[]) => [...rows].sort((a, b) => b.fare - a.fare);
+
 export function cardView(o: OpenOrder) {
   return {
     title: `${o.pickup_area || '출발지'} → ${o.dropoff_area || '도착지'}`,

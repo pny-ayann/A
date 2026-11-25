@@ -93,7 +93,7 @@ export function ChatPanel({ orderId, myId }: { orderId: string; myId: string }) 
           const n = t === thread ? 0 : unreadFor(unread, orderId, t);
           return (
             <button key={t} type="button" role="tab" aria-selected={t === thread} onClick={() => setThread(t)}
-              className={`flex-1 px-3 py-2 ${t === thread ? 'border-b-2 border-blue-600 font-semibold' : 'text-slate-500 hover:bg-slate-50'}`}>
+              className={`flex-1 px-3 py-2 ${t === thread ? 'border-b-2 border-road font-semibold' : 'text-slate-500 hover:bg-slate-50'}`}>
               {THREAD_LABEL[t]}
               {n > 0 && <span className="ml-1 rounded-full bg-red-600 px-1.5 text-xs text-white">{n}</span>}
             </button>
@@ -110,7 +110,7 @@ export function ChatPanel({ orderId, myId }: { orderId: string; myId: string }) 
               <span className="text-xs text-slate-400">
                 {who ? `${ROLE_LABEL[who.role] ?? ''} ${who.name}` : ''} · {kst(m.created_at)}
               </span>
-              <span className={`max-w-[85%] rounded-lg px-3 py-1.5 whitespace-pre-wrap ${mine ? 'bg-blue-600 text-white' : 'bg-slate-100'}`}>{m.body}</span>
+              <span className={`max-w-[85%] rounded-lg px-3 py-1.5 whitespace-pre-wrap ${mine ? 'bg-road text-white' : 'bg-slate-100'}`}>{m.body}</span>
             </div>
           );
         })}
@@ -122,7 +122,7 @@ export function ChatPanel({ orderId, myId }: { orderId: string; myId: string }) 
           placeholder={`${THREAD_LABEL[thread]}에 답장 (Enter 보내기, Shift+Enter 줄바꿈)`}
           className="min-w-0 flex-1 resize-none rounded border px-2 py-1 text-sm" />
         <button type="button" onClick={() => void send()} disabled={sending || !text.trim()}
-          className="rounded bg-blue-600 px-3 text-sm font-semibold text-white disabled:opacity-50">보내기</button>
+          className="rounded bg-road px-3 text-sm font-semibold text-white disabled:opacity-50">보내기</button>
       </div>
       {error && <p role="alert" className="px-3 pb-2 text-sm text-red-600">{error}</p>}
     </section>

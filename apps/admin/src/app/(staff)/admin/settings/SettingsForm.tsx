@@ -28,7 +28,7 @@ export function SettingsForm({ initial }: { initial: SettingsInput }) {
         </label>
       ))}
       <div className="flex items-center gap-3">
-        <button disabled={pending} className="rounded bg-blue-600 px-4 py-1.5 text-sm font-semibold text-white disabled:opacity-50">
+        <button disabled={pending} className="rounded bg-road px-4 py-1.5 text-sm font-semibold text-white disabled:opacity-50">
           {pending ? '저장 중…' : '저장'}
         </button>
         <Notice result={result} />

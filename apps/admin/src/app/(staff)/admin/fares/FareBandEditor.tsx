@@ -60,7 +60,7 @@ export function FareBandEditor({ initial }: { initial: FareBandInput[] }) {
         <button type="button" onClick={() => setRows(rs => [...rs, { key: nextKey++, max_km: '', fare: '' }])}
           className="rounded border px-3 py-1.5 text-sm hover:bg-slate-50">구간 추가</button>
         <button type="button" onClick={save} disabled={pending}
-          className="rounded bg-blue-600 px-4 py-1.5 text-sm font-semibold text-white disabled:opacity-50">
+          className="rounded bg-road px-4 py-1.5 text-sm font-semibold text-white disabled:opacity-50">
           {pending ? '저장 중…' : '요금표 저장'}
         </button>
         <Notice result={result} />

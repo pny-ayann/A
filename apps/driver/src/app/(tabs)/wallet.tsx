@@ -32,6 +32,7 @@ export default function Wallet() {
         <Row label="충전금 잔액" value={summary ? won(summary.balance) : '…'} strong />
         <Row label="출금 가능" value={summary ? won(summary.withdrawable) : '…'} />
         {!!summary && summary.pending !== 0 && <Row label="들어올 예정 (완료 10분 뒤)" value={won(summary.pending)} />}
+        {!!account && <Body sub style={{ borderTopWidth: 1, borderTopColor: color.line, paddingTop: 8 }}>받을 계좌: {account.bank} {account.number} ({account.holder})</Body>}
       </Card>
       <View style={{ flexDirection: 'row', gap: 8 }}>
         <View style={{ flex: 1 }}>
@@ -41,7 +42,6 @@ export default function Wallet() {
           <BigButton label={account ? '받을 계좌' : '계좌 등록'} tone="plain" onPress={() => router.push('/wallet/account' as Href)} />
         </View>
       </View>
-      {!!account && <Body sub>{account.bank} {account.number} ({account.holder})</Body>}
 
       <Card>
         <Text style={{ fontSize: 14, color: color.sub, fontWeight: '700' }}>내역</Text>

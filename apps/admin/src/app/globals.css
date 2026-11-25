@@ -1,7 +1,40 @@
 @import "tailwindcss";
 
+/* 기사·고객 앱과 같은 색: 도로 표지판 초록, 아스팔트, 영업용 번호판 노랑 */
+@theme {
+  --color-road: #0a6b4b;
+  --color-road-soft: #e3f1ea;
+  --color-ink: #1c2127;
+  --color-ink-2: #2c333b;
+  --color-plate: #f6c800;
+}
+
 body {
-  background: #f5f6f8;
-  color: #1f2937;
-  font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif;
+  background: #f0f1ee;
+  color: #1c2127;
+  font-family: "Pretendard Variable", "Pretendard", "Malgun Gothic", system-ui, sans-serif;
+  letter-spacing: -0.01em;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-road);
+  outline-offset: 2px;
+}
+
+/* 차량번호: 영업용 번호판처럼 */
+.plate {
+  display: inline-block;
+  background: var(--color-plate);
+  color: var(--color-ink);
+  border: 2px solid var(--color-ink);
+  border-radius: 4px;
+  padding: 0 6px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #7a8088;
 }

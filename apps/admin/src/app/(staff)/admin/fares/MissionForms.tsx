@@ -31,7 +31,7 @@ export function MissionAddForm() {
       <input name="name" placeholder="새 미션 이름" aria-label="새 미션 이름" className={`${input} w-40`} />
       <input name="extra_fare" placeholder="추가요금" aria-label="새 미션 추가요금" inputMode="numeric" className={`${input} w-28`} />
       <span className="text-sm">원</span>
-      <button disabled={pending} className="rounded bg-blue-600 px-3 py-1 text-sm font-semibold text-white disabled:opacity-50">미션 추가</button>
+      <button disabled={pending} className="rounded bg-road px-3 py-1 text-sm font-semibold text-white disabled:opacity-50">미션 추가</button>
       <Notice result={result} />
     </form>
   );

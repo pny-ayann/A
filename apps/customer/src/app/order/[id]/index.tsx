@@ -8,7 +8,7 @@ import { useOrder, type Stop } from '@/lib/orders/useOrder';
 import { supabase } from '@/lib/supabase';
 import { kstShort, won } from '@/lib/time';
 import { useFocusedInterval } from '@/lib/useInterval';
-import { BigButton, Body, Card, color, Notice, Screen, Title } from '@/ui/kit';
+import { BigButton, Body, Card, color, Notice, Plate, Screen, Title } from '@/ui/kit';
 
 const STEPS = ['open', 'assigned', 'arrived_pickup', 'driving', 'completed'] as const;
 const RUNNING = ['assigned', 'arrived_pickup', 'driving'];
@@ -111,7 +111,8 @@ export default function OrderDetail() {
       </Card>
 
       <Card>
-        <Body>{order.kind === 'daeri' ? '대리' : '탁송'} · {order.vehicle_number ?? '차량번호 없음'}</Body>
+        <Body>{order.kind === 'daeri' ? '대리' : '탁송'}</Body>
+        <Plate number={order.vehicle_number} />
         {!!(order.vehicle_model || order.vehicle_color || order.transmission) && (
           <Body sub>{[order.vehicle_model, order.vehicle_color, order.transmission === 'auto' ? '오토' : order.transmission === 'manual' ? '수동' : null].filter(Boolean).join(' · ')}</Body>
         )}

@@ -17,7 +17,7 @@ export function LoginForm({ initialMessage }: { initialMessage: string | null })
           className="mt-1 w-full rounded border px-3 py-2" />
       </label>
       {state?.message && <p role="alert" className="text-sm text-red-600">{state.message}</p>}
-      <button disabled={pending} className="w-full rounded bg-blue-600 py-2 font-semibold text-white disabled:opacity-50">
+      <button disabled={pending} className="w-full rounded bg-road py-2 font-semibold text-white disabled:opacity-50">
         {pending ? '확인 중…' : '로그인'}
       </button>
     </form>
