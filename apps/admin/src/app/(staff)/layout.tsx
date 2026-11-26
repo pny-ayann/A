@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { NavLink } from '@/components/NavLink';
-import { UnreadBadge } from '@/components/UnreadBadge';
 import { getStaffProfile } from '@/lib/supabase/server';
 import { logout } from '../login/actions';
 
@@ -31,7 +30,6 @@ export default async function StaffLayout({ children }: { children: ReactNode })
       <nav className="flex w-52 shrink-0 flex-col bg-ink p-4 text-slate-100">
         <div className="mb-6"><span className="plate text-lg">탁송 관제</span></div>
         {staffMenu.map(m => <NavLink key={m.href} href={m.href} except={m.href === '/orders' ? ['/orders/new'] : undefined}>{m.label}</NavLink>)}
-        <NavLink href="/inquiries">문의<UnreadBadge /></NavLink>
         {!isAdmin && (
           <>
             <NavLink href="/admin/drivers">기사 조회</NavLink>

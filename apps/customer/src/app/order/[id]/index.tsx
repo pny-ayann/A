@@ -1,5 +1,5 @@
 import { errorMessage } from '@takson/shared';
-import { router, useFocusEffect, useLocalSearchParams, type Href } from 'expo-router';
+import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Linking, Platform, Text, View } from 'react-native';
 import { actionsFor } from '@/lib/orders/actions';
@@ -31,13 +31,6 @@ export default function OrderDetail() {
   const { order, events, driver, missing, reload } = useOrder(id);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [unread, setUnread] = useState(0);
-  useFocusEffect(useCallback(() => {
-    void supabase.rpc('unread_counts').then(({ data }) => {
-      const row = ((data ?? []) as { order_id: string; thread: string; unread: number }[]).find(r => r.order_id === id && r.thread === 'customer');
-      setUnread(row?.unread ?? 0);
-    });
-  }, [id]));
   const [loc, setLoc] = useState<{ lat: number; lng: number; updated_at: string } | null>(null);
   const [now, setNow] = useState(new Date());
 
@@ -121,7 +114,6 @@ export default function OrderDetail() {
         {!!order.driver_memo && <Body sub>기사 메모: {order.driver_memo}</Body>}
       </Card>
 
-      <BigButton label={unread > 0 ? `관제에 문의 (새 메시지 ${unread})` : '관제에 문의'} onPress={() => router.push(`/order/${id}/chat` as Href)} />
       {order.status !== 'open' && order.status !== 'cancelled' && (
         <BigButton label="사진·주유비 보기" tone="plain" onPress={() => router.push(`/order/${id}/photos` as Href)} />
       )}

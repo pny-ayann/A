@@ -21,7 +21,6 @@ type Ctx = {
   companyName: (id: string) => string;
   driverName: (id: string | null) => string;
   late: boolean;
-  unread: number;
 };
 type Col = { id: string; head: string; th?: string; td?: string; cell: (o: OrderRow, c: Ctx) => ReactNode };
 
@@ -47,12 +46,8 @@ const COLS: Col[] = [
     <span className={`rounded px-1.5 py-0.5 text-xs ${STATUS_COLOR[o.status]}`}>{STATUS_LABEL[o.status]}</span>
     {c.late && <span className="ml-1 text-xs font-semibold">배차 늦음</span>}
   </> },
-  { id: 'detail', head: '상세', cell: (o, c) => <>
+  { id: 'detail', head: '상세', cell: o => <>
     <Link href={`/orders/${o.id}`} onClick={e => e.stopPropagation()} className="text-road hover:underline">상세</Link>
-    {c.unread > 0 && (
-      <span title={`안 읽은 문의 ${c.unread}개`} aria-label="안 읽은 문의 있음"
-        className="ml-1 inline-block h-2 w-2 rounded-full bg-red-600 align-middle" />
-    )}
   </> },
 ];
 const IDS = COLS.map(c => c.id);
@@ -72,9 +67,7 @@ function useColumnOrder() {
   return { order, move: (from: string, to: string) => save(moveColumn(order, from, to)), reset: () => save(IDS) };
 }
 
-export function OrderTable({ orders, companyName, driverName, selectedId, onSelect, now, alertMin, unread }: {
-  /** 오더별 안 읽은 문의 수 */
-  unread: Map<string, number>;
+export function OrderTable({ orders, companyName, driverName, selectedId, onSelect, now, alertMin }: {
   orders: OrderRow[];
   companyName: (id: string) => string;
   driverName: (id: string | null) => string;
@@ -118,7 +111,7 @@ export function OrderTable({ orders, companyName, driverName, selectedId, onSele
         {orders.map(o => {
           const late = now !== null && isUnassignedOverdue(o, now, alertMin);
           const selected = o.id === selectedId;
-          const ctx: Ctx = { companyName, driverName, late, unread: unread.get(o.id) ?? 0 };
+          const ctx: Ctx = { companyName, driverName, late };
           return (
             <tr key={o.id} onClick={() => onSelect(o.id)} aria-selected={selected} data-late={late || undefined}
               className={`cursor-pointer border-b ${selected ? 'bg-road-soft' : late ? 'bg-red-50 text-red-700' : 'hover:bg-slate-50'}`}>
