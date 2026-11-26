@@ -1,7 +1,6 @@
 import type { OrderStatus } from '@takson/shared';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ChatPanel } from '@/components/ChatPanel';
 import { AssignPanel } from '@/components/AssignPanel';
 import { EventTimeline, type TimelineEvent } from '@/components/EventTimeline';
 import { OrderEditForm } from '@/components/OrderEditForm';
@@ -61,7 +60,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const missionList = (missions.data ?? []) as unknown as { extra_fare: number; missions: { name: string } | null }[];
 
   return (
-    <div className="mx-auto grid max-w-7xl gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
+    <div className="mx-auto max-w-7xl">
     <div className="min-w-0 space-y-4">
       <div className="flex flex-wrap items-center gap-3">
         <Link href="/orders" className="text-sm text-slate-500 hover:underline">← 관제판</Link>
@@ -90,9 +89,6 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       <PhotoGrid photos={signedPhotos} receipts={signedReceipts} />
       <OrderEditForm key={order.id} orderId={id} initial={rowToForm(order)} updatedAt={order.updated_at} companies={companies.data ?? []} />
       <EventTimeline events={timeline} />
-    </div>
-    <div className="xl:sticky xl:top-6 xl:self-start">
-      <ChatPanel orderId={id} myId={me.id} />
     </div>
     </div>
   );

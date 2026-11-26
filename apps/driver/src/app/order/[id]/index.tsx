@@ -103,17 +103,8 @@ export default function OrderDetail() {
             <PhotoSlots orderId={id} phase={photoPhase} missing={photoPhase === 'pickup' ? missing.pickup : missing.dropoff} />
           </Card>
         )}
-        {!done && accepted && (
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            <View style={{ flex: 1 }}>
-              <BigButton label="관제에 문의" tone="plain" onPress={() => router.push(`/order/${id}/chat` as Href)} />
-            </View>
-            {(order.status === 'arrived_pickup' || order.status === 'driving') && (
-              <View style={{ flex: 1 }}>
-                <BigButton label="주유 등록" tone="plain" onPress={() => router.push(`/order/${id}/fuel` as Href)} />
-              </View>
-            )}
-          </View>
+        {(order.status === 'arrived_pickup' || order.status === 'driving') && (
+          <BigButton label="주유 등록" tone="plain" onPress={() => router.push(`/order/${id}/fuel` as Href)} />
         )}
         {queue.dropNotice &&<Notice tone="danger">{queue.dropNotice}</Notice>}
         {done && <Notice tone="ok">운행을 마쳤어요. 수고하셨어요!</Notice>}
