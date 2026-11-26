@@ -1,5 +1,5 @@
 'use client';
-import { calcFare, type FareBand, type PaymentMethod } from '@takson/shared';
+import { calcFare, KIND_LABEL, type FareBand, type PaymentMethod } from '@takson/shared';
 import { useEffect, useState, useTransition } from 'react';
 import { AddressPicker } from '@/components/AddressPicker';
 import { emptyPlace, validateOrderForm, type OrderForm, type Place } from '@/lib/orders/form';
@@ -22,7 +22,9 @@ function blankForm(company?: Company): OrderForm {
 
 type Distance = { state: 'idle' | 'loading' | 'failed' } | { state: 'ok'; km: number };
 
-export function OrderNewForm({ companies, bands, missions }: { companies: Company[]; bands: FareBand[]; missions: Mission[] }) {
+export function OrderNewForm({ companies, bands, missions, capitals }: {
+  companies: Company[]; bands: FareBand[]; missions: Mission[]; capitals: { id: string; name: string }[];
+}) {
   const [f, setF] = useState<OrderForm>(() => blankForm());
   const [top, setTop] = useState<Place[]>([]);
   const [distance, setDistance] = useState<Distance>({ state: 'idle' });
@@ -104,13 +106,20 @@ export function OrderNewForm({ companies, bands, missions }: { companies: Compan
           {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
         <div className="flex gap-1 text-sm">
-          {(['takson', 'daeri'] as const).map(k => (
+          {(['takson', 'docs', 'daeri'] as const).map(k => (
             <button key={k} type="button" onClick={() => patch({ kind: k })}
               className={`rounded border px-3 py-1 ${f.kind === k ? 'bg-ink text-white' : 'hover:bg-slate-50'}`}>
-              {k === 'takson' ? '탁송' : '대리'}
+              {KIND_LABEL[k]}
             </button>
           ))}
         </div>
+        {f.kind === 'docs' && (
+          <select aria-label="캐피탈 회사" value={f.capitalCompanyId ?? ''}
+            onChange={e => patch({ capitalCompanyId: e.target.value || null })} className={`${input} w-48`}>
+            <option value="">캐피탈 회사를 고르세요</option>
+            {capitals.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        )}
       </section>
 
       {top.length > 0 && (

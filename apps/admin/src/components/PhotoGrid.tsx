@@ -1,6 +1,9 @@
 import { PHOTO_SLOTS, SLOT_LABEL } from '@/lib/orders/actions';
+import { PhotoReject } from './PhotoReject';
 
-export type SignedPhoto = { phase: string; slot: string | null; url: string | null; taken_at: string | null };
+export type SignedPhoto = {
+  id: string; phase: string; slot: string | null; url: string | null; taken_at: string | null; rejected_reason: string | null;
+};
 export type SignedReceipt = { id: string; amount: number; url: string | null; created_at: string };
 
 const kst = (iso: string) => new Intl.DateTimeFormat('ko-KR', {
@@ -20,7 +23,10 @@ function Thumb({ url, label }: { url: string | null; label: string }) {
 }
 
 /** 출발·도착 필수 사진 6칸(빠진 칸 표시), 추가 사진, 주유 영수증 */
-export function PhotoGrid({ photos, receipts }: { photos: SignedPhoto[]; receipts: SignedReceipt[] }) {
+/** rejectable: 지금 불인정할 수 있는 단계(출발 사진은 운행 시작 전, 도착 사진은 완료 전) */
+export function PhotoGrid({ orderId, photos, receipts, rejectable }: {
+  orderId: string; photos: SignedPhoto[]; receipts: SignedReceipt[]; rejectable: 'pickup' | 'dropoff' | null;
+}) {
   const find = (phase: string, slot: string) => photos.find(p => p.phase === phase && p.slot === slot);
   const extras = photos.filter(p => p.phase === 'extra');
   return (
@@ -37,6 +43,8 @@ export function PhotoGrid({ photos, receipts }: { photos: SignedPhoto[]; receipt
                 <figure key={slot}>
                   <Thumb url={p?.url ?? null} label={SLOT_LABEL[slot]} />
                   <figcaption className="text-center text-xs text-slate-500">{SLOT_LABEL[slot]}</figcaption>
+                  {p?.rejected_reason && <p className="text-center text-xs text-red-700">✗ 불인정: {p.rejected_reason}</p>}
+                  {p && !p.rejected_reason && rejectable === phase && <PhotoReject orderId={orderId} photoId={p.id} />}
                 </figure>
               );
             })}

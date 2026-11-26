@@ -17,8 +17,9 @@ function toLocalInput(iso: string | null): string {
 }
 
 /** 상태·기사 말고 모든 항목 수정 */
-export function OrderEditForm({ orderId, initial, updatedAt, companies }: {
+export function OrderEditForm({ orderId, initial, updatedAt, companies, capitals }: {
   orderId: string; initial: OrderForm; updatedAt: string; companies: { id: string; name: string }[];
+  capitals: { id: string; name: string }[];
 }) {
   const router = useRouter();
   // 화면을 열 때(또는 내가 저장했을 때) 기준. 새로고침으로 바뀐 initial이 아니라 이걸과 비교해야 남의 변경을 덮지 않는다
@@ -56,9 +57,17 @@ export function OrderEditForm({ orderId, initial, updatedAt, companies }: {
           {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
         <select aria-label="종류" value={f.kind} onChange={e => patch({ kind: e.target.value as OrderForm['kind'] })} className={input}>
-          <option value="takson">탁송</option>
+          <option value="takson">일반탁송</option>
+          <option value="docs">서류탁송</option>
           <option value="daeri">대리</option>
         </select>
+        {f.kind === 'docs' && (
+          <select aria-label="캐피탈 회사" value={f.capitalCompanyId ?? ''}
+            onChange={e => patch({ capitalCompanyId: e.target.value || null })} className={input}>
+            <option value="">캐피탈 회사를 고르세요</option>
+            {capitals.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        )}
         <select aria-label="결제 방식" value={f.paymentMethod}
           onChange={e => patch({ paymentMethod: e.target.value as PaymentMethod })} className={input}>
           <option value="postpaid">후불</option>

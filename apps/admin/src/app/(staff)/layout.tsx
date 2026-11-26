@@ -17,6 +17,7 @@ const adminMenu = [
   { href: '/admin/billing', label: '업체 정산' },
   { href: '/admin/staff', label: '직원 계정' },
   { href: '/admin/fares', label: '요금표·미션' },
+  { href: '/admin/capital', label: '캐피탈·서류 예시' },
   { href: '/admin/settings', label: '운영 설정' },
   { href: '/admin/audit', label: '변경 기록' },
 ];
