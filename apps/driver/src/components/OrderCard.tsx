@@ -20,6 +20,7 @@ export function OrderCard({ order, onGrab, busy }: { order: OpenOrder; onGrab: (
         <View style={s.row}>
           <Text style={s.sub} numberOfLines={1}>
             <Text style={v.pay === '현금' ? s.cash : v.pay === '후불' ? s.later : null}>{v.pay}</Text>
+            {v.docs ? <Text style={s.docs}> · {v.docs}</Text> : null}
             {rest ? <Text style={order.reserved_at ? s.reserved : null}> · {rest}</Text> : null}
           </Text>
           <Text style={s.fare}>{v.fare}</Text>
@@ -43,6 +44,7 @@ const s = StyleSheet.create({
   cash: { fontWeight: '800', color: color.ok },
   later: { fontWeight: '800', color: color.danger },
   reserved: { fontWeight: '700', color: color.warn },
+  docs: { fontWeight: '800', color: color.warn },
   fare: { fontSize: 19, fontWeight: '800', color: color.text },
   grab: { minWidth: 64, minHeight: 56, borderRadius: 10, backgroundColor: color.primary, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10 },
   grabText: { fontSize: 17, fontWeight: '800', color: '#fff' },

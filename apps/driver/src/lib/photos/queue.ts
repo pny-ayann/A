@@ -3,14 +3,15 @@
  * 저장(AsyncStorage)과 실제 업로드는 PhotoQueueProvider / uploader 가 한다.
  */
 export type Slot = 'front' | 'back' | 'left' | 'right' | 'dashboard' | 'key';
-export type Phase = 'pickup' | 'dropoff' | 'extra';
+export type Phase = 'pickup' | 'dropoff' | 'extra' | 'docs';
 
 export type QueueItem = {
   id: string;
   kind: 'photo' | 'receipt';
   orderId: string;
   phase: Phase | null;
-  slot: Slot | null;
+  /** 차량 칸(Slot) 또는 서류 칸('registration' | 'seal' | 캐피탈 예시 id) */
+  slot: string | null;
   localUri: string;
   takenAt: string;
   lat: number | null;

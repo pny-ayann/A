@@ -1,3 +1,4 @@
+import { KIND_LABEL, type OrderKind } from '@takson/shared';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Alert, FlatList, Platform, RefreshControl, Text, View } from 'react-native';
@@ -67,7 +68,7 @@ export default function History() {
         renderItem={({ item }) => (
           <Card>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-              <Text style={{ fontSize: 16, color: color.sub }}>{kstShort(item.completedAt)} · {item.kind === 'daeri' ? '대리' : '탁송'}</Text>
+              <Text style={{ fontSize: 16, color: color.sub }}>{kstShort(item.completedAt)} · {KIND_LABEL[item.kind as OrderKind] ?? '탁송'}</Text>
               <Text style={{ fontSize: 18, fontWeight: '800', color: color.text }}>{won(item.fare)}</Text>
             </View>
             <Body>{item.from} → {item.to}</Body>

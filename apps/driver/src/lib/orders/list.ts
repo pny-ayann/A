@@ -1,10 +1,11 @@
+import { KIND_LABEL, type OrderKind } from '@takson/shared';
 import { kstShort, won } from '../time';
 
 /** RPC list_open_orders 한 줄 (연락처·전체 주소는 서버가 안 줌) */
 export type OpenOrder = {
   id: string;
   order_no: string;
-  kind: 'takson' | 'daeri';
+  kind: OrderKind;
   reserved_at: string | null;
   pickup_area: string | null;
   dropoff_area: string | null;
@@ -12,6 +13,8 @@ export type OpenOrder = {
   payment_method: 'cash' | 'postpaid';
   distance_km: number | null;
   mission_names: string[];
+  /** 서류탁송의 캐피탈 회사 이름 */
+  capital_name: string | null;
 };
 
 /** 서버(list_open_orders)와 같은 순서: 일반 오더 가까운 순(거리 모름은 뒤) → 예약 오더 예약 시간 순 */
@@ -41,6 +44,7 @@ export function cardView(o: OpenOrder) {
     distance: o.distance_km === null ? '거리 모름' : `${o.distance_km.toFixed(1)}km`,
     fare: won(o.fare),
     pay: o.payment_method === 'cash' ? '현금' as const : '후불' as const,
-    kindLabel: o.kind === 'daeri' ? '대리' as const : '탁송' as const,
+    kindLabel: KIND_LABEL[o.kind],
+    docs: o.kind === 'docs' ? (o.capital_name ? `서류 · ${o.capital_name}` : '서류') : null,
   };
 }

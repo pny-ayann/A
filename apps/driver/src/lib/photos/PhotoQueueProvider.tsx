@@ -7,13 +7,13 @@ import { AppState, Platform } from 'react-native';
 import { currentPosition } from '../location/current';
 import { compressPhoto } from './image';
 import { supabase } from '../supabase';
-import { applyResult, due, enqueue, pendingCount, resolveDrop, retryNow, type Phase, type QueueItem, type Slot } from './queue';
+import { applyResult, due, enqueue, pendingCount, resolveDrop, retryNow, type Phase, type QueueItem } from './queue';
 import { deleteLocal, uploadOne } from './uploader';
 
 const KEY = 'photo-queue-v1';
 
 export type Shot = { uri: string; width: number; height: number };
-type Add = { kind: 'photo'; orderId: string; phase: Phase; slot: Slot | null } | { kind: 'receipt'; orderId: string; amount: number };
+type Add = { kind: 'photo'; orderId: string; phase: Phase; slot: string | null } | { kind: 'receipt'; orderId: string; amount: number };
 
 type Ctx = {
   items: QueueItem[];

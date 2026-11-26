@@ -15,6 +15,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="index" options={{ title: '주문 목록' }} />
       <Tabs.Screen name="current" options={{ title: '진행 중' }} />
       <Tabs.Screen name="history" options={{ title: '운행 내역' }} />
+      <Tabs.Screen name="examples" options={{ title: '서류 예시' }} />
       <Tabs.Screen name="wallet" options={{ title: '충전금' }} />
     </Tabs>
   );
