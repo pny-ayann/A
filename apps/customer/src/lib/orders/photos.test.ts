@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { photoGrid, type PhotoRow } from './photos';
+import { DOC_STATUS_TEXT, docLabel, photoGrid, type PhotoRow } from './photos';
 
 const r = (phase: PhotoRow['phase'], slot: PhotoRow['slot'], taken: string, id = `${phase}-${slot}-${taken}`): PhotoRow =>
   ({ id, phase, slot, path: `${id}.jpg`, taken_at: taken });
@@ -22,4 +22,13 @@ test('추가 사진은 찍은 시각순', () => {
   ]);
   expect(g.extra.map(x => x.id)).toEqual(['a', 'b']);
   expect(g.pickup.every(x => x === null)).toBe(true);
+});
+
+test('서류 칸 이름과 상태 글자', () => {
+  const ex = [{ id: 'e1', title: '양도증명서' }];
+  expect(docLabel('registration', ex)).toBe('자동차등록증');
+  expect(docLabel('seal', ex)).toBe('인감(본인서명사실확인서)');
+  expect(docLabel('e1', ex)).toBe('양도증명서');
+  expect(docLabel('x', ex)).toBe('캐피탈 서류');
+  expect(DOC_STATUS_TEXT).toEqual({ pending: '관제 확인 중', approved: '✓ 인정', rejected: '✗ 불인정' });
 });

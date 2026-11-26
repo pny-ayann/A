@@ -1,4 +1,4 @@
-import { errorMessage } from '@takson/shared';
+import { errorMessage, KIND_LABEL } from '@takson/shared';
 import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Linking, Platform, Text, View } from 'react-native';
@@ -104,7 +104,7 @@ export default function OrderDetail() {
       </Card>
 
       <Card>
-        <Body>{order.kind === 'daeri' ? '대리' : '탁송'}</Body>
+        <Body>{KIND_LABEL[order.kind]}{order.capital_name ? ` · ${order.capital_name}` : ''}{order.seal_count ? ` · 인감 ${order.seal_count}장` : ''}</Body>
         <Plate number={order.vehicle_number} />
         {!!(order.vehicle_model || order.vehicle_color || order.transmission) && (
           <Body sub>{[order.vehicle_model, order.vehicle_color, order.transmission === 'auto' ? '오토' : order.transmission === 'manual' ? '수동' : null].filter(Boolean).join(' · ')}</Body>
