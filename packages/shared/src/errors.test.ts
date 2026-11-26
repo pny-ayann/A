@@ -8,6 +8,7 @@ test('모르는 코드는 기본 문구', () => { expect(errorMessage('X')).toBe
 test('꺼진 미션', () => { expect(errorMessage('INVALID_MISSION')).toBe('꺼진 미션이 있어요. 다시 골라 주세요.'); });
 test('서류탁송 오류 문구', () => {
   expect(errorMessage('CAPITAL_REQUIRED')).toBe('캐피탈 회사를 골라 주세요.');
+  expect(errorMessage('DOCS_STAFF_ONLY')).toBe('서류탁송은 관제에서만 접수할 수 있어요.');
   expect(errorMessage('SEAL_COUNT_REQUIRED')).toBe('인감 수량을 적어 주세요.');
   expect(errorMessage('DOCS_REQUIRED')).toBe('빠졌거나 다시 찍어야 할 서류가 있어요.');
   expect(errorMessage('DOCS_NOT_APPROVED')).toBe('관제가 서류를 확인하는 중이에요. 확인되면 출발할 수 있어요.');

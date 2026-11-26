@@ -21,7 +21,7 @@ test('카드 표시', () => {
   const v = cardView(o({ reserved_at: '2026-11-18T05:00:00Z', distance_km: 3.24, payment_method: 'cash', kind: 'daeri' }));
   expect(v).toEqual({
     title: '강남구 역삼동 → 수원시 영통구', badge: '[예약] 11/18 14:00', distance: '3.2km', fare: '35,000원',
-    pay: '현금', kindLabel: '대리', docs: null,
+    pay: '현금', kindLabel: '대리', pickup: '강남구 역삼동', docs: null,
   });
   const plain = cardView(o({}));
   expect(plain.badge).toBeNull();
@@ -52,9 +52,11 @@ test('동네 이름이 없으면 대신 표시', () => {
   expect(cardView(o({ pickup_area: null, dropoff_area: null })).title).toBe('출발지 → 도착지');
 });
 
-test('서류탁송 배지', () => {
-  const v = cardView(o({ kind: 'docs', capital_name: 'KB할부' }));
-  expect(v.docs).toBe('서류 · KB할부');
+test('서류탁송은 출발지 앞에 ★팩스★, 아래 줄에 캐피탈 회사', () => {
+  const v = cardView(o({ kind: 'docs', capital_name: 'KB할부', pickup_area: '종로구 관철동' }));
+  expect(v.pickup).toBe('★팩스★ 종로구 관철동');
+  expect(v.docs).toBe('KB할부');
   expect(v.kindLabel).toBe('서류탁송');
-  expect(cardView(o({ kind: 'docs' })).docs).toBe('서류');
+  expect(cardView(o({ kind: 'docs' })).docs).toBeNull();
+  expect(cardView(o({ kind: 'takson', pickup_area: '종로구 관철동' })).pickup).toBe('종로구 관철동');
 });

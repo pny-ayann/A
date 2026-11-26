@@ -36,7 +36,7 @@ const COLS: Col[] = [
   { id: 'route', head: '출발 → 도착', td: 'w-full max-w-0 min-w-[12rem]', cell: o => (
     <div className="truncate" title={`${o.pickup_address} → ${o.dropoff_address}`}>
       {o.kind === 'daeri' && <span className="mr-1 rounded bg-slate-200 px-1 text-xs">대리</span>}
-      {o.kind === 'docs' && <span className="mr-1 rounded bg-orange-100 px-1 text-xs text-orange-800">서류</span>}
+      {o.kind === 'docs' && <span className="mr-1 rounded bg-orange-100 px-1 text-xs text-orange-800">★팩스★</span>}
       {placeOf(o.pickup_area, o.pickup_address)} → {placeOf(o.dropoff_area, o.dropoff_address)}
     </div>
   ) },

@@ -58,4 +58,4 @@ test('일반탁송은 캐피탈 회사 없이 통과', () => { expect(validateOr
 test('일반탁송으로 바꾸면 RPC 값의 capital_company_id는 null', () => {
   expect(toOrderInsert({ ...okForm, kind: 'takson', capitalCompanyId: 'cap1' }).capital_company_id).toBeNull();
 });
-test('종류 이름', () => { expect(KIND_LABEL).toEqual({ takson: '일반탁송', docs: '서류탁송', daeri: '대리' }); });
+test('종류 이름', () => { expect(KIND_LABEL).toEqual({ takson: '탁송', docs: '서류탁송', daeri: '대리' }); });
