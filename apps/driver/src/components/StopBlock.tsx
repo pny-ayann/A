@@ -9,20 +9,20 @@ async function open(url: string | null, fallback: string) {
   try { await Linking.openURL(url); } catch { await Linking.openURL(fallback); }
 }
 
-/** 출발·경유·도착 한 곳: 주소, 담당자, 길안내·전화 버튼 */
-export function StopBlock({ title, stop }: { title: string; stop: Stop }) {
+/** 출발·경유·도착 한 곳: 주소, 담당자, 길안내·전화 버튼. full이 아니면(오더수락 전) 주소만 */
+export function StopBlock({ title, stop, full, nav = true }: { title: string; stop: Stop; full: boolean; nav?: boolean }) {
   const links = navLinks({ lat: stop.lat, lng: stop.lng, name: stop.area || stop.address, address: stop.address });
   const tel = telLink(stop.contact_phone);
   return (
     <View style={s.box}>
       <Text style={s.title}>{title}</Text>
       <Text style={s.addr}>{stop.address}{stop.detail ? `\n${stop.detail}` : ''}</Text>
-      {(stop.contact_name || stop.contact_phone) ? <Text style={s.sub}>{stop.contact_name ?? ''} {stop.contact_phone ?? ''}</Text> : null}
-      <View style={s.row}>
-        <Chip label="카카오맵" onPress={() => void open(links.kakao, links.web)} />
-        <Chip label="티맵" onPress={() => void open(links.tmap, links.web)} />
+      {full && (stop.contact_name || stop.contact_phone) ? <Text style={s.sub}>{stop.contact_name ?? ''} {stop.contact_phone ?? ''}</Text> : null}
+      {full && <View style={s.row}>
+        {nav && <Chip label="카카오맵" onPress={() => void open(links.kakao, links.web)} />}
+        {nav && <Chip label="티맵" onPress={() => void open(links.tmap, links.web)} />}
         {tel ? <Chip label="전화" onPress={() => void Linking.openURL(tel)} /> : null}
-      </View>
+      </View>}
     </View>
   );
 }

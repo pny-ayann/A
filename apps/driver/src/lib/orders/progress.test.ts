@@ -3,8 +3,8 @@ import { nextAction, releaseRemainingMs } from './progress';
 
 const none = { pickup: [], dropoff: [] };
 
-test('배차됨 → 출발지 도착', () => {
-  expect(nextAction('assigned', none, 0)).toEqual({ label: '출발지 도착', enabled: true, hint: null });
+test('배차됨 → 오더수락', () => {
+  expect(nextAction('assigned', none, 0)).toEqual({ label: '오더수락', enabled: true, hint: null });
 });
 
 test('출발 사진이 모자라면 운행 시작 잠김', () => {

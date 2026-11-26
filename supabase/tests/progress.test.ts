@@ -26,6 +26,12 @@ describe('반납', () => {
     expect(await status(o)).toBe('open');
   });
 
+  test('사유 없이도 반납된다', async () => {
+    const o = await held({}, 1);
+    await as(w.db, w.d, tx => tx.query('select release_order($1, null)', [o]));
+    expect(await status(o)).toBe('open');
+  });
+
   test('탁송은 11분이면 RELEASE_WINDOW_PASSED', async () => {
     const o = await held({}, 11);
     await expectError(release(w.d, o), 'RELEASE_WINDOW_PASSED');
@@ -88,7 +94,7 @@ describe('진행 단계와 사진', () => {
     const o = await held();
     await seedPhotos(w.db, o, 'pickup', ['front', 'dashboard']);
     const r = await w.db.query('select missing_photos($1, $2) m', [o, 'pickup']);
-    expect(r.rows[0]).toEqual({ m: ['back', 'left', 'right'] });
+    expect(r.rows[0]).toEqual({ m: ['back', 'left', 'right', 'key'] });
   });
 
   test('완료된 오더에 advance → INVALID_TRANSITION', async () => {
@@ -134,7 +140,7 @@ describe('진행 단계와 사진', () => {
   test('고객은 자기 오더 사진을 보고 다른 업체 고객은 못 본다', async () => {
     const o = await held();
     await seedPhotos(w.db, o, 'pickup');
-    expect((await as(w.db, w.a, tx => tx.query('select id from order_photos'))).rows).toHaveLength(5);
+    expect((await as(w.db, w.a, tx => tx.query('select id from order_photos'))).rows).toHaveLength(6);
     expect((await as(w.db, w.b, tx => tx.query('select id from order_photos'))).rows).toHaveLength(0);
   });
 

@@ -42,8 +42,8 @@ test('회수·재배차·수정 이력 문장', () => {
 test('모르는 이력 종류도 깨지지 않음', () => {
   expect(describeEvent({ type: 'something_new' })).toBe('something_new');
 });
-test('필수 사진 칸 다섯 개와 이름', () => {
-  expect(PHOTO_SLOTS.map(s => SLOT_LABEL[s])).toEqual(['앞', '뒤', '왼쪽', '오른쪽', '계기판']);
+test('필수 사진 칸 여섯 개와 이름', () => {
+  expect(PHOTO_SLOTS.map(s => SLOT_LABEL[s])).toEqual(['앞', '뒤', '왼쪽', '오른쪽', '계기판', '차키']);
 });
 
 import { rowToForm, validateOrderEdit } from './actions';

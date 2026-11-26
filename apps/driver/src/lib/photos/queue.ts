@@ -2,7 +2,7 @@
  * 사진·영수증 업로드 대기열 (순수 함수). 신호가 없을 때 찍은 것을 휴대폰에 두었다가 차례로 올린다.
  * 저장(AsyncStorage)과 실제 업로드는 PhotoQueueProvider / uploader 가 한다.
  */
-export type Slot = 'front' | 'back' | 'left' | 'right' | 'dashboard';
+export type Slot = 'front' | 'back' | 'left' | 'right' | 'dashboard' | 'key';
 export type Phase = 'pickup' | 'dropoff' | 'extra';
 
 export type QueueItem = {

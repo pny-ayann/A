@@ -106,7 +106,7 @@ export default function OpenOrders() {
 
 const s = StyleSheet.create({
   top: { gap: 8, paddingHorizontal: 12, paddingTop: 12, paddingBottom: 8, backgroundColor: color.bg, borderBottomWidth: 1, borderColor: color.line },
-  chip: { minHeight: 40, paddingHorizontal: 12, borderRadius: 20, borderWidth: 1, borderColor: color.line, backgroundColor: '#fff', justifyContent: 'center' },
+  chip: { minHeight: 44, paddingHorizontal: 12, borderRadius: 20, borderWidth: 1, borderColor: color.line, backgroundColor: '#fff', justifyContent: 'center' },
   chipText: { fontSize: 15, fontWeight: '700', color: color.text },
-  input: { flex: 1, minHeight: 46, borderWidth: 1, borderColor: color.line, borderRadius: 10, backgroundColor: '#fff', paddingHorizontal: 12, fontSize: 16, color: color.text },
+  input: { flex: 1, minWidth: 0, minHeight: 46, borderWidth: 1, borderColor: color.line, borderRadius: 10, backgroundColor: '#fff', paddingHorizontal: 12, fontSize: 16, color: color.text },
 });

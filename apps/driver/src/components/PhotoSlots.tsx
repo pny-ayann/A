@@ -4,11 +4,11 @@ import { usePhotoQueue } from '@/lib/photos/PhotoQueueProvider';
 import type { Slot } from '@/lib/photos/queue';
 import { BigButton, color } from '@/ui/kit';
 
-export const SLOTS: Slot[] = ['front', 'back', 'left', 'right', 'dashboard'];
-export const SLOT_LABEL: Record<Slot, string> = { front: '앞', back: '뒤', left: '왼쪽', right: '오른쪽', dashboard: '계기판' };
+export const SLOTS: Slot[] = ['front', 'back', 'left', 'right', 'dashboard', 'key'];
+export const SLOT_LABEL: Record<Slot, string> = { front: '앞', back: '뒤', left: '왼쪽', right: '오른쪽', dashboard: '계기판', key: '차키' };
 
 /**
- * 출발·도착 필수 사진 5칸. 서버에 있음(✓) / 휴대폰에서 올리는 중(대기) / 없음(눌러서 찍기).
+ * 출발·도착 필수 사진 6칸. 서버에 있음(✓) / 휴대폰에서 올리는 중(대기) / 없음(눌러서 찍기).
  * missing = 서버 missing_photos 결과
  */
 export function PhotoSlots({ orderId, phase, missing }: { orderId: string; phase: 'pickup' | 'dropoff'; missing: string[] }) {
@@ -23,7 +23,7 @@ export function PhotoSlots({ orderId, phase, missing }: { orderId: string; phase
 
   return (
     <View style={{ gap: 10 }}>
-      <Text style={s.head}>{phase === 'pickup' ? '출발 사진' : '도착 사진'} (5장 필수)</Text>
+      <Text style={s.head}>{phase === 'pickup' ? '출발 사진' : '도착 사진'} (6장 필수)</Text>
       {pendingAll > 0 && <Text style={s.pending}>업로드 대기 {pendingAll}장 · 신호가 잡히면 저절로 올라가요</Text>}
       <View style={s.grid}>
         {SLOTS.map(slot => {
