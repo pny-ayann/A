@@ -45,7 +45,9 @@ export function OrderBoard({ initialOrders, companies, drivers, alertMin, initia
   useEffect(() => {
     const supabase = browserClient();
     const refetchDocs = async () => {
-      const { data } = await supabase.from('order_documents').select('order_id').eq('status', 'pending');
+      // 출발 전(수락함) 오더만: 운행이 시작됐거나 끝난 오더의 남은 대기 서류는 표시하지 않는다
+      const { data } = await supabase.from('order_documents').select('order_id, orders!inner(status)')
+        .eq('status', 'pending').eq('orders.status', 'arrived_pickup');
       if (data) setDocWait(new Set((data as { order_id: string }[]).map(d => d.order_id)));
     };
     const refetch = async () => {

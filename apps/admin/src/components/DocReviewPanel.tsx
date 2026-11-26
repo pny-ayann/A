@@ -7,6 +7,8 @@ import { RejectForm } from './RejectForm';
 export type ReviewDoc = {
   id: string | null; slot: string; label: string; url: string | null;
   status: 'pending' | 'approved' | 'rejected' | null; reason: string | null;
+  /** 화면에 보인 서류를 찍은 시각 (인정·불인정 때 함께 보내 바뀐 서류를 거절) */
+  takenAt: string | null;
 };
 
 const BADGE = {
@@ -23,10 +25,10 @@ export function DocReviewPanel({ orderId, capitalName, sealCount, docs }: {
   const router = useRouter();
   const [result, setResult] = useState<Result | null>(null);
   const [pending, start] = useTransition();
-  const act = (docId: string, ok: boolean, reason = '') => start(async () => {
-    const r = await reviewDocument(orderId, docId, ok, reason);
+  const act = (d: ReviewDoc, ok: boolean, reason = '') => start(async () => {
+    const r = await reviewDocument(orderId, d.id!, ok, reason, d.takenAt!);
     setResult(r);
-    if (r.ok) router.refresh();
+    router.refresh();
   });
   return (
     <section className="space-y-2 rounded border bg-white p-3">
@@ -50,10 +52,10 @@ export function DocReviewPanel({ orderId, capitalName, sealCount, docs }: {
               {d.status === 'rejected' && d.reason && <div className="text-red-700">{d.reason}</div>}
             </figcaption>
             {d.id && d.status !== 'approved' && (
-              <button type="button" disabled={pending} onClick={() => act(d.id!, true)}
+              <button type="button" disabled={pending} onClick={() => act(d, true)}
                 className="w-full rounded bg-road px-2 py-0.5 text-xs text-white disabled:opacity-40">인정</button>
             )}
-            {d.id && d.status !== 'rejected' && <RejectForm busy={pending} onReject={reason => act(d.id!, false, reason)} />}
+            {d.id && d.status !== 'rejected' && <RejectForm busy={pending} onReject={reason => act(d, false, reason)} />}
           </figure>
         ))}
       </div>

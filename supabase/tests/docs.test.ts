@@ -265,3 +265,38 @@ describe('차량 사진 불인정', () => {
     await expectError(reject(w.op, await photoId(o, 'front'), '잘림'), 'INVALID_TRANSITION');
   });
 });
+
+describe('검토 수정', () => {
+  const takenAt = async (id: string) =>
+    (await w.db.query<{ t: string }>('select taken_at::text t from order_documents where id=$1', [id])).rows[0]!.t;
+
+  test('관제가 본 뒤 기사가 다시 찍었으면 인정이 거절된다 (DOC_CHANGED)', async () => {
+    const o = await docsOrder(await seedCapital(w.db, { pages: 0 }));
+    await seedDocs(w.db, o, ['seal']);
+    const id = await docId(o, 'seal');
+    const seen = await takenAt(id);
+    await as(w.db, w.d, tx => tx.query(`update order_documents set taken_at = now() + interval '1 minute' where id=$1`, [id]));
+    await expectError(as(w.db, w.op, tx => tx.query('select review_document($1, true, null, $2)', [id, seen])), 'DOC_CHANGED');
+    const now2 = await takenAt(id);
+    await as(w.db, w.op, tx => tx.query('select review_document($1, true, null, $2)', [id, now2]));
+    expect((await missingDocs(o)).pending).toEqual([]);
+  });
+
+  test('인감 수량을 바꾸면 인감 서류가 다시 확인 대기', async () => {
+    const o = await docsOrder(await seedCapital(w.db, { pages: 0 }));
+    await sealCount(o, 2);
+    await seedDocs(w.db, o, ['registration', 'seal']);
+    await approveAll(o);
+    await sealCount(o, 2);
+    expect((await missingDocs(o)).pending).toEqual([]);
+    await sealCount(o, 1);
+    expect((await missingDocs(o)).pending).toEqual(['seal']);
+  });
+
+  test('운행 중에는 서류를 불인정할 수 없다', async () => {
+    const o = await docsOrder(await seedCapital(w.db, { pages: 0 }));
+    await seedDocs(w.db, o, ['seal']);
+    await w.db.query(`update orders set status='driving' where id=$1`, [o]);
+    await expectError(review(w.op, await docId(o, 'seal'), false, '흐림'), 'INVALID_TRANSITION');
+  });
+});

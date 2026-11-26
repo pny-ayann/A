@@ -22,7 +22,7 @@ const STATUS_LABEL = {
 export default function OrderDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { profile } = useAuth();
-  const { order, missing, gone, settings, docs, reload } = useOrder(id, profile?.id);
+  const { order, missing, gone, settings, docs, rejected, reload } = useOrder(id, profile?.id);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ text: string; tone: 'ok' | 'danger' } | null>(null);
   const [now, setNow] = useState(() => new Date());
@@ -101,7 +101,8 @@ export default function OrderDetail() {
         </Card>
         {photoPhase && (
           <Card>
-            <PhotoSlots orderId={id} phase={photoPhase} missing={photoPhase === 'pickup' ? missing.pickup : missing.dropoff} />
+            <PhotoSlots orderId={id} phase={photoPhase} missing={photoPhase === 'pickup' ? missing.pickup : missing.dropoff}
+              rejected={rejected[photoPhase]} />
           </Card>
         )}
         {order.kind === 'docs' && order.status === 'arrived_pickup' && docs && (

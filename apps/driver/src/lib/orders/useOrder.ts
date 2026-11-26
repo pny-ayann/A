@@ -49,19 +49,27 @@ export function useOrder(id: string, myId: string | undefined) {
   const [gone, setGone] = useState(false);
   const [settings, setSettings] = useState({ release_min_takson: 10, release_min_daeri: 5 });
   const [docs, setDocs] = useState<DocInfo | null>(null);
+  // 관제가 불인정한 차량 사진 칸과 이유 (단계별)
+  const [rejected, setRejected] = useState<{ pickup: Record<string, string>; dropoff: Record<string, string> }>({ pickup: {}, dropoff: {} });
 
   const load = useCallback(async () => {
     const { data: r, error } = await supabase.from('orders').select('*').eq('id', id).maybeSingle();
     if (error) return; // 신호 문제 등: 화면은 그대로 두고 다음에 다시
     if (!r || r.driver_id !== myId || r.status === 'cancelled') { setGone(true); setOrder(null); return; }
-    const [wps, ms, mp, md] = await Promise.all([
+    const [wps, ms, mp, md, rj] = await Promise.all([
       supabase.from('order_waypoints').select('*').eq('order_id', id).order('seq'),
       supabase.from('order_missions').select('missions(name)').eq('order_id', id),
       r.status === 'assigned' || r.status === 'arrived_pickup' ? supabase.rpc('missing_photos', { p_order_id: id, p_phase: 'pickup' }) : NONE,
       r.status === 'driving' ? supabase.rpc('missing_photos', { p_order_id: id, p_phase: 'dropoff' }) : NONE,
+      supabase.from('order_photos').select('phase, slot, rejected_reason').eq('order_id', id).not('rejected_reason', 'is', null),
     ]);
     setMissing({ pickup: (mp.data ?? []) as string[], dropoff: (md.data ?? []) as string[] });
     setDocs(r.kind === 'docs' ? await loadDocs(id, r.capital_company_id as string | null) : null);
+    const rej = { pickup: {} as Record<string, string>, dropoff: {} as Record<string, string> };
+    for (const p of (rj.data ?? []) as { phase: string; slot: string | null; rejected_reason: string }[]) {
+      if (p.slot && (p.phase === 'pickup' || p.phase === 'dropoff')) rej[p.phase][p.slot] = p.rejected_reason;
+    }
+    setRejected(rej);
     setOrder({
       ...(r as unknown as MyOrder),
       pickup: stop(r, 'pickup'),
@@ -85,7 +93,7 @@ export function useOrder(id: string, myId: string | undefined) {
       .subscribe());
   }, [id, load]);
 
-  return { order, missing, gone, settings, docs, reload: load };
+  return { order, missing, gone, settings, docs, rejected, reload: load };
 }
 
 export type ActiveRow = {

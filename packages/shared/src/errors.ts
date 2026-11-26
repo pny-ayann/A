@@ -10,6 +10,7 @@ const messages: Record<string, string> = {
   SEAL_COUNT_REQUIRED: '인감 수량을 적어 주세요.',
   DOCS_REQUIRED: '빠졌거나 다시 찍어야 할 서류가 있어요.',
   DOCS_NOT_APPROVED: '관제가 서류를 확인하는 중이에요. 확인되면 출발할 수 있어요.',
+  DOC_CHANGED: '그 사이 기사님이 서류를 다시 찍었어요. 새로고침해서 다시 확인해 주세요.',
   INVALID_TRANSITION: '지금 상태에서는 할 수 없는 작업이에요.',
   REASON_REQUIRED: '사유를 입력해 주세요.',
   INVALID_MISSION: '꺼진 미션이 있어요. 다시 골라 주세요.',

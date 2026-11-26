@@ -12,3 +12,6 @@ test('서류탁송 오류 문구', () => {
   expect(errorMessage('DOCS_REQUIRED')).toBe('빠졌거나 다시 찍어야 할 서류가 있어요.');
   expect(errorMessage('DOCS_NOT_APPROVED')).toBe('관제가 서류를 확인하는 중이에요. 확인되면 출발할 수 있어요.');
 });
+test('그 사이 다시 찍은 서류', () => {
+  expect(errorMessage('DOC_CHANGED')).toBe('그 사이 기사님이 서류를 다시 찍었어요. 새로고침해서 다시 확인해 주세요.');
+});

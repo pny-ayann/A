@@ -33,7 +33,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     supabase.rpc('missing_photos', { p_order_id: id, p_phase: 'pickup' }),
     supabase.rpc('missing_photos', { p_order_id: id, p_phase: 'dropoff' }),
     supabase.from('capital_companies').select('id, name').order('sort').order('name'),
-    supabase.from('order_documents').select('id, slot, path, status, reason').eq('order_id', id),
+    supabase.from('order_documents').select('id, slot, path, status, reason, taken_at').eq('order_id', id),
     supabase.from('capital_examples').select('id, title').eq('company_id', order.capital_company_id ?? '00000000-0000-0000-0000-000000000000'),
     supabase.rpc('required_doc_slots', { p_order_id: id }),
   ]);
@@ -64,7 +64,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const reviewDocs: ReviewDoc[] = docSlots.map(slot => {
     const d = (docs.data ?? []).find(x => x.slot === slot);
     return { id: d?.id ?? null, slot, label: docSlotLabel(slot, exList), url: d ? docUrls.get(d.path) ?? null : null,
-      status: (d?.status as ReviewDoc['status']) ?? null, reason: d?.reason ?? null };
+      status: (d?.status as ReviewDoc['status']) ?? null, reason: d?.reason ?? null, takenAt: d?.taken_at ?? null };
   });
   const capitalName = (capitals.data ?? []).find(c => c.id === order.capital_company_id)?.name ?? null;
   const signedReceipts: SignedReceipt[] = (receipts.data ?? []).map(r => ({ id: r.id, amount: r.amount, created_at: r.created_at, url: receiptUrls.get(r.path) ?? null }));
