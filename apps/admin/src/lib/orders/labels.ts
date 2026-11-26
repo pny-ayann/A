@@ -4,7 +4,7 @@ import type { OrderRow } from './realtime';
 export const STATUS_LABEL: Record<OrderStatus, string> = {
   open: '접수',
   assigned: '배차됨',
-  arrived_pickup: '출발지 도착',
+  arrived_pickup: '수락함',
   driving: '운행 중',
   completed: '완료',
   cancelled: '취소',

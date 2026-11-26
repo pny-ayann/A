@@ -4,7 +4,7 @@ import { ago, statusLabel } from './labels';
 test('상태 문구', () => {
   expect(statusLabel('open')).toBe('접수 대기');
   expect(statusLabel('assigned')).toBe('배차됨');
-  expect(statusLabel('arrived_pickup')).toBe('출발지 도착');
+  expect(statusLabel('arrived_pickup')).toBe('수락함');
   expect(statusLabel('driving')).toBe('운행 중');
   expect(statusLabel('completed')).toBe('완료');
   expect(statusLabel('cancelled')).toBe('취소');

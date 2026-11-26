@@ -10,7 +10,7 @@ test('출발 사진이 없으면 운행 중으로 갈 때 사유 필요, 도착 
   expect(needsReason('arrived_pickup', 'driving', { pickup: ['back'], dropoff: [] })).toBe(true);
   expect(needsReason('arrived_pickup', 'driving', { pickup: [], dropoff: ['back'] })).toBe(false);
 });
-test('출발지 도착으로 갈 때는 사진과 상관없이 사유 불필요', () => {
+test('수락함으로 갈 때는 사진과 상관없이 사유 불필요', () => {
   expect(needsReason('assigned', 'arrived_pickup', { pickup: ['front'], dropoff: ['front'] })).toBe(false);
 });
 
@@ -31,7 +31,7 @@ test('출발·도착 사진이 모두 빠진 예외', () => {
 });
 test('반납 이력 문장', () => { expect(describeEvent({ type: 'released', reason: '차량 위치 착오' })).toBe('기사 반납 – 차량 위치 착오'); });
 test('상태 이력 문장', () => {
-  expect(describeEvent({ type: 'status', from_status: 'assigned', to_status: 'arrived_pickup' })).toBe('배차됨 → 출발지 도착');
+  expect(describeEvent({ type: 'status', from_status: 'assigned', to_status: 'arrived_pickup' })).toBe('배차됨 → 수락함');
   expect(describeEvent({ type: 'status', from_status: 'open', to_status: 'cancelled', reason: '고객 요청' })).toBe('접수 → 취소 – 고객 요청');
 });
 test('회수·재배차·수정 이력 문장', () => {

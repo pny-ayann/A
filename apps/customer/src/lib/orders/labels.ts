@@ -3,7 +3,7 @@ import type { OrderStatus } from '@takson/shared';
 const LABEL: Record<OrderStatus, string> = {
   open: '접수 대기',
   assigned: '배차됨',
-  arrived_pickup: '출발지 도착',
+  arrived_pickup: '수락함',
   driving: '운행 중',
   completed: '완료',
   cancelled: '취소',
