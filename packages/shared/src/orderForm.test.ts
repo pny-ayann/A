@@ -1,5 +1,6 @@
 import { expect, test } from 'vitest';
 import { emptyPlace, toOrderInsert, validateOrderForm, type OrderForm } from './orderForm';
+import { KIND_LABEL } from './types';
 
 const now = new Date('2026-11-17T03:00:00Z');
 const place = (address: string) => ({ ...emptyPlace(), address, area: '중구 태평로1가', lat: 37.56, lng: 126.97 });
@@ -7,6 +8,7 @@ const okForm: OrderForm = {
   companyId: 'c1', kind: 'takson', pickup: place('서울 중구 세종대로 110'), dropoff: place('서울 강남구 강남대로 396'),
   waypoints: [], vehicleNumber: '12가3456', vehicleModel: '', vehicleColor: '', transmission: '', driverMemo: '',
   missionIds: [], reservedAt: null, paymentMethod: 'postpaid', fare: 35000, distanceKm: 12.3, staffOnly: false,
+  capitalCompanyId: null,
 };
 
 test('정상 폼은 통과', () => { expect(validateOrderForm(okForm, now)).toBeNull(); });
@@ -47,3 +49,13 @@ test('컬럼 이름으로 바꾼다', () => {
   });
   expect(row).not.toHaveProperty('status');
 });
+test('서류탁송은 캐피탈 회사가 필요하다', () => {
+  expect(validateOrderForm({ ...okForm, kind: 'docs' }, now)).toBe('캐피탈 회사를 골라 주세요.');
+  expect(validateOrderForm({ ...okForm, kind: 'docs', capitalCompanyId: 'cap1' }, now)).toBeNull();
+  expect(toOrderInsert({ ...okForm, kind: 'docs', capitalCompanyId: 'cap1' }).capital_company_id).toBe('cap1');
+});
+test('일반탁송은 캐피탈 회사 없이 통과', () => { expect(validateOrderForm({ ...okForm, kind: 'takson' }, now)).toBeNull(); });
+test('일반탁송으로 바꾸면 RPC 값의 capital_company_id는 null', () => {
+  expect(toOrderInsert({ ...okForm, kind: 'takson', capitalCompanyId: 'cap1' }).capital_company_id).toBeNull();
+});
+test('종류 이름', () => { expect(KIND_LABEL).toEqual({ takson: '일반탁송', docs: '서류탁송', daeri: '대리' }); });

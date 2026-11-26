@@ -56,6 +56,10 @@ export function describeEvent(e: EventLike): string {
       if (missing.dropoff?.length) parts.push(`도착 사진 ${missing.dropoff.length}장`);
       return withReason(`사진 없이 진행: ${parts.join(', ')} 없음`, e.reason);
     }
+    case 'doc_review':
+      return data.ok ? `서류 인정: ${String(data.label)}` : `서류 불인정: ${String(data.label)} — ${e.reason ?? ''}`;
+    case 'photo_reject':
+      return `사진 불인정: ${data.phase === 'dropoff' ? '도착' : '출발'} ${SLOT_LABEL[data.slot as PhotoSlot] ?? String(data.slot)} — ${e.reason ?? ''}`;
     case 'released':
       return withReason('기사 반납', e.reason);
     case 'unassigned':
@@ -99,6 +103,7 @@ export function rowToForm(r: Row): OrderForm {
     transmission: (r.transmission as Transmission | null) ?? '', driverMemo: str(r.driver_memo), missionIds: [],
     reservedAt: (r.reserved_at as string | null) ?? null, paymentMethod: r.payment_method as PaymentMethod,
     fare: num(r.fare), distanceKm: num(r.distance_km), staffOnly: r.dispatch_mode === 'staff_only',
+    capitalCompanyId: (r.capital_company_id as string | null) ?? null,
   };
 }
 

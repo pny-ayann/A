@@ -31,6 +31,7 @@ function Gate() {
         <Stack.Screen name="order/[id]/fuel" options={{ headerShown: true, title: '주유 등록' }} />
         <Stack.Screen name="wallet/withdraw" options={{ headerShown: true, title: '출금 신청' }} />
         <Stack.Screen name="wallet/account" options={{ headerShown: true, title: '받을 계좌' }} />
+        <Stack.Screen name="examples/[companyId]" options={{ headerShown: true, title: '작성방법 예시' }} />
       </Stack.Protected>
     </Stack>
   );

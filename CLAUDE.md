@@ -24,6 +24,7 @@
 - 단계: 1단계 오더 흐름 → 2단계 정산.
 - 2단계-1 기사 정산: 충전금은 `wallet_entries` 장부(잔액 칸 없음, 합으로만), 완료 오더 정산은 서버 트리거 `settle_order`가 차이만 적음. 운영 방법은 `supabase/README.md` 8번. 가상계좌·자동 송금은 아직 없음(출금 신청에 자리만 있음).
 - 2단계-2 업체 정산: 관제웹 `/admin/billing`(관리자만). 정산서 금액은 저장 없이 DB 함수 `billing_lines_all` 하나에서 계산(`billing_lines`·`billing_totals`·`billing_summary`·`billing_receivables`), 저장은 입금 체크 `company_payments`(체크 때 금액)뿐. 엑셀은 `exceljs`, `/api/billing/excel`. 세금계산서는 홈택스에서 직접. 운영은 `supabase/README.md` 9번.
+- 서류탁송(1단계): 오더 종류 `takson`·`docs`·`daeri`. 서류 사진은 `order_documents`(관제 `review_document`로 인정·불인정, 모두 인정돼야 운행 시작), 캐피탈 회사·예시는 `capital_companies`·`capital_examples`·비공개 버킷 `capital-examples`. `예시서류/` 원본은 GitHub 제외. 운영은 `supabase/README.md` 10번. 휴대폰 AI 검사(2단계)는 아직.
 - GitHub 저장소: https://github.com/pny-ayann/A (브랜치 main)
 
 ## 사용자와 일하는 방식

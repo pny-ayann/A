@@ -2,7 +2,7 @@ import { REQUIRED_SLOTS } from '@takson/shared';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Image, Modal, Pressable, Text, View } from 'react-native';
-import { photoGrid, SLOT_LABEL, type PhotoRow } from '@/lib/orders/photos';
+import { DOC_STATUS_TEXT, docLabel, photoGrid, SLOT_LABEL, type DocRow, type PhotoRow } from '@/lib/orders/photos';
 import { supabase } from '@/lib/supabase';
 import { kstShort, won } from '@/lib/time';
 import { Body, Card, color, Screen, Title } from '@/ui/kit';
@@ -31,12 +31,15 @@ export default function Photos() {
   const [urls, setUrls] = useState<Record<string, string>>({});
   const [receipts, setReceipts] = useState<(Receipt & { url: string | null })[]>([]);
   const [open, setOpen] = useState<string | null>(null);
+  const [docs, setDocs] = useState<(DocRow & { url: string | null; label: string })[]>([]);
 
   useFocusEffect(useCallback(() => {
     void (async () => {
-      const [p, r] = await Promise.all([
+      const [p, r, d, o] = await Promise.all([
         supabase.from('order_photos').select('id, phase, slot, path, taken_at').eq('order_id', id),
         supabase.from('fuel_receipts').select('id, amount, path, created_at').eq('order_id', id).order('created_at'),
+        supabase.from('order_documents').select('id, slot, path, status, reason, taken_at').eq('order_id', id).order('taken_at'),
+        supabase.from('orders').select('capital_company_id').eq('id', id).maybeSingle(),
       ]);
       const photos = (p.data ?? []) as PhotoRow[];
       setRows(photos);
@@ -52,6 +55,19 @@ export default function Photos() {
         setReceipts(recs.map((x, i) => ({ ...x, url: s.data?.[i]?.signedUrl ?? null })));
       } else {
         setReceipts([]);
+      }
+      // 서류탁송 서류 사진 (칸 이름은 캐피탈 예시 제목)
+      const docRows = (d.data ?? []) as DocRow[];
+      const capId = (o.data as { capital_company_id: string | null } | null)?.capital_company_id ?? null;
+      if (docRows.length) {
+        const [s, ex] = await Promise.all([
+          supabase.storage.from('order-photos').createSignedUrls(docRows.map(x => x.path), 3600),
+          capId ? supabase.from('capital_examples').select('id, title').eq('company_id', capId) : Promise.resolve({ data: [] }),
+        ]);
+        const examples = (ex.data ?? []) as { id: string; title: string }[];
+        setDocs(docRows.map((x, i) => ({ ...x, url: s.data?.[i]?.signedUrl ?? null, label: docLabel(x.slot, examples) })));
+      } else {
+        setDocs([]);
       }
     })();
   }, [id]));
@@ -81,6 +97,17 @@ export default function Photos() {
           </View>
         </>
       )}
+      {docs.length > 0 && (
+        <>
+          <Title>서류 사진</Title>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+            {docs.map(x => (
+              <Thumb key={x.id} label={x.label} url={x.url} onOpen={() => setOpen(x.url)}
+                sub={`${DOC_STATUS_TEXT[x.status]}${x.status === 'rejected' && x.reason ? ` · ${x.reason}` : ''}`} />
+            ))}
+          </View>
+        </>
+      )}
       {receipts.length > 0 && (
         <Card>
           <Text style={{ fontSize: 17, fontWeight: '700' }}>주유비 {won(receipts.reduce((s, r) => s + r.amount, 0))}</Text>
@@ -89,7 +116,7 @@ export default function Photos() {
           </View>
         </Card>
       )}
-      {rows.length === 0 && receipts.length === 0 && <Body sub>아직 사진이 없어요. 기사님이 찍으면 여기에 보여요.</Body>}
+      {rows.length === 0 && receipts.length === 0 && docs.length === 0 && <Body sub>아직 사진이 없어요. 기사님이 찍으면 여기에 보여요.</Body>}
 
       <Modal visible={!!open} transparent animationType="fade" onRequestClose={() => setOpen(null)}>
         <Pressable accessibilityRole="button" accessibilityLabel="닫기" onPress={() => setOpen(null)}

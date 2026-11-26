@@ -27,6 +27,8 @@ export type OrderForm = {
   fare: number | null;
   distanceKm: number | null;
   staffOnly: boolean;
+  /** 서류탁송일 때만 (캐피탈 회사 id) */
+  capitalCompanyId: string | null;
 };
 
 export const emptyPlace = (): Place => ({
@@ -36,6 +38,7 @@ export const emptyPlace = (): Place => ({
 /** 접수 폼 검사. 문제가 없으면 null */
 export function validateOrderForm(f: OrderForm, now: Date): string | null {
   if (!f.companyId) return '업체를 골라 주세요.';
+  if (f.kind === 'docs' && !f.capitalCompanyId) return '캐피탈 회사를 골라 주세요.';
   if (!f.pickup.address.trim()) return '출발지를 입력해 주세요.';
   if (!f.dropoff.address.trim()) return '도착지를 입력해 주세요.';
   if (f.waypoints.some(w => !w.address.trim())) return '경유지 주소를 입력하거나 경유지를 지워 주세요.';
@@ -69,6 +72,7 @@ export function toOrderInsert(f: OrderForm): Record<string, unknown> {
   return {
     company_id: f.companyId,
     kind: f.kind,
+    capital_company_id: f.kind === 'docs' ? f.capitalCompanyId : null,
     dispatch_mode: f.staffOnly ? 'staff_only' : 'open',
     reserved_at: f.reservedAt,
     ...placeColumns('pickup', f.pickup),

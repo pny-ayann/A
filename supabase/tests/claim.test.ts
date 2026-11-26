@@ -21,7 +21,7 @@ describe('공개 목록', () => {
     await seedOrder(w.db, w.A);
     const r = await list(w.d, 37.5665, 126.978);
     expect(Object.keys(r.rows[0]!).sort()).toEqual(
-      ['distance_km', 'dropoff_area', 'fare', 'id', 'kind', 'mission_names', 'order_no', 'payment_method', 'pickup_area', 'reserved_at']);
+      ['capital_name', 'distance_km', 'dropoff_area', 'fare', 'id', 'kind', 'mission_names', 'order_no', 'payment_method', 'pickup_area', 'reserved_at']);
   });
 
   test('출발지와 같은 위치면 0km, 위치를 안 주면 null', async () => {

@@ -2,6 +2,7 @@ import { router, type Href } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { usePhotoQueue } from '@/lib/photos/PhotoQueueProvider';
 import type { Slot } from '@/lib/photos/queue';
+import { photoSlotState } from '@/lib/photos/slotState';
 import { BigButton, color } from '@/ui/kit';
 
 export const SLOTS: Slot[] = ['front', 'back', 'left', 'right', 'dashboard', 'key'];
@@ -11,11 +12,15 @@ export const SLOT_LABEL: Record<Slot, string> = { front: '앞', back: '뒤', lef
  * 출발·도착 필수 사진 6칸. 서버에 있음(✓) / 휴대폰에서 올리는 중(대기) / 없음(눌러서 찍기).
  * missing = 서버 missing_photos 결과
  */
-export function PhotoSlots({ orderId, phase, missing }: { orderId: string; phase: 'pickup' | 'dropoff'; missing: string[] }) {
+export function PhotoSlots({ orderId, phase, missing, rejected = {} }: {
+  orderId: string; phase: 'pickup' | 'dropoff'; missing: string[];
+  /** 관제가 불인정한 칸 → 이유 */
+  rejected?: Record<string, string>;
+}) {
   const { items } = usePhotoQueue();
   const queued = (s: Slot) => items.some(i => i.orderId === orderId && i.phase === phase && i.slot === s);
-  const state = (s: Slot): 'done' | 'queued' | 'empty' => (queued(s) ? 'queued' : missing.includes(s) ? 'empty' : 'done');
-  const todo = SLOTS.filter(s => state(s) === 'empty');
+  const state = (s: Slot) => photoSlotState(s, missing, queued(s), rejected);
+  const todo = SLOTS.filter(s => ['empty', 'rejected'].includes(state(s).key));
   const pendingAll = items.filter(i => i.orderId === orderId).length;
 
   const shoot = (slots: Slot[]) =>
@@ -31,9 +36,9 @@ export function PhotoSlots({ orderId, phase, missing }: { orderId: string; phase
           return (
             <Pressable key={slot} accessibilityRole="button" accessibilityLabel={`${SLOT_LABEL[slot]} 사진`}
               onPress={() => shoot([slot])}
-              style={[s.cell, st === 'done' && s.done, st === 'queued' && s.queued]}>
+              style={[s.cell, st.key === 'done' && s.done, st.key === 'queued' && s.queued, st.key === 'rejected' && s.bad]}>
               <Text style={s.cellLabel}>{SLOT_LABEL[slot]}</Text>
-              <Text style={s.cellState}>{st === 'done' ? '✓ 올림' : st === 'queued' ? '대기' : '찍기'}</Text>
+              <Text style={[s.cellState, st.key === 'rejected' && s.badText]} numberOfLines={3}>{st.text}</Text>
             </Pressable>
           );
         })}
@@ -52,6 +57,8 @@ const s = StyleSheet.create({
   cell: { width: '31%', minHeight: 72, borderRadius: 12, borderWidth: 2, borderColor: color.line, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' },
   done: { borderColor: color.ok, borderStyle: 'solid', backgroundColor: '#ECFDF5' },
   queued: { borderColor: color.warn, borderStyle: 'solid', backgroundColor: color.warnBg },
+  bad: { borderColor: color.danger, borderStyle: 'solid', backgroundColor: '#FEF2F2' },
+  badText: { color: color.danger, fontWeight: '700', textAlign: 'center' },
   cellLabel: { fontSize: 18, fontWeight: '700', color: color.text },
   cellState: { fontSize: 14, color: color.sub },
 });

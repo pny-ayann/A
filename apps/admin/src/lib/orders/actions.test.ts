@@ -96,3 +96,16 @@ test('아무것도 안 바꾸면 빈 객체', () => {
   const f = rowToForm(dbRow);
   expect(changedColumns(f, { ...f })).toEqual({});
 });
+test('서류 확인·사진 불인정 이력', () => {
+  expect(describeEvent({ type: 'doc_review', reason: null, data: { label: '인감(본인서명사실확인서)', ok: true } }))
+    .toBe('서류 인정: 인감(본인서명사실확인서)');
+  expect(describeEvent({ type: 'doc_review', reason: '용도 틀림', data: { label: '인감(본인서명사실확인서)', ok: false } }))
+    .toBe('서류 불인정: 인감(본인서명사실확인서) — 용도 틀림');
+  expect(describeEvent({ type: 'photo_reject', reason: '잘림', data: { phase: 'pickup', slot: 'front' } }))
+    .toBe('사진 불인정: 출발 앞 — 잘림');
+});
+test('서류탁송 캐피탈 회사도 수정 칸에 들어간다', () => {
+  const before = rowToForm({ kind: 'takson', capital_company_id: null });
+  const after = { ...before, kind: 'docs' as const, capitalCompanyId: 'cap1' };
+  expect(changedColumns(before, after)).toMatchObject({ kind: 'docs', capital_company_id: 'cap1' });
+});

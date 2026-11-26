@@ -1,4 +1,4 @@
-import { REQUIRED_SLOTS, type PhotoPhase, type PhotoSlot } from '@takson/shared';
+import { REQUIRED_SLOTS, type DocStatus, type PhotoPhase, type PhotoSlot } from '@takson/shared';
 
 export type PhotoRow = { id: string; phase: PhotoPhase; slot: PhotoSlot | null; path: string; taken_at: string };
 
@@ -12,4 +12,16 @@ export function photoGrid(rows: PhotoRow[]): { pickup: (PhotoRow | null)[]; drop
     dropoff: slots('dropoff'),
     extra: rows.filter(r => r.phase === 'extra').sort((a, b) => a.taken_at.localeCompare(b.taken_at)),
   };
+}
+
+/** 서류탁송 서류 사진 한 칸 */
+export type DocRow = { id: string; slot: string; path: string; status: DocStatus; reason: string | null; taken_at: string };
+
+export const DOC_STATUS_TEXT: Record<DocStatus, string> = { pending: '관제 확인 중', approved: '✓ 인정', rejected: '✗ 불인정' };
+
+/** 서류 칸 이름 (slot: 'registration' | 'seal' | 캐피탈 예시 id) */
+export function docLabel(slot: string, examples: { id: string; title: string }[]): string {
+  if (slot === 'registration') return '자동차등록증';
+  if (slot === 'seal') return '인감(본인서명사실확인서)';
+  return examples.find(e => e.id === slot)?.title ?? '캐피탈 서류';
 }

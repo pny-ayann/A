@@ -1,4 +1,4 @@
-import { subscribeAuthed, uniqueTopic, type OrderStatus } from '@takson/shared';
+import { subscribeAuthed, uniqueTopic, type OrderKind, type OrderStatus } from '@takson/shared';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../supabase';
@@ -8,7 +8,8 @@ export type Stop = {
   contact_name: string | null; contact_phone: string | null;
 };
 export type Order = {
-  id: string; order_no: string; company_id: string; kind: 'takson' | 'daeri'; status: OrderStatus; reserved_at: string | null;
+  id: string; order_no: string; company_id: string; kind: OrderKind; status: OrderStatus; reserved_at: string | null;
+  capital_company_id: string | null; seal_count: number | null; capital_name: string | null;
   driver_id: string | null; assigned_at: string | null; fare: number; payment_method: 'cash' | 'postpaid'; distance_km: number | null;
   vehicle_number: string | null; vehicle_model: string | null; vehicle_color: string | null; transmission: 'auto' | 'manual' | null;
   driver_memo: string | null; created_at: string;
@@ -43,17 +44,19 @@ export function useOrder(id: string) {
     if (mine !== seq.current) return;
     if (error) return; // 신호 문제: 화면은 그대로 두고 다음에
     if (!r) { setMissing(true); return; }
-    const [wps, ms, ev, dr] = await Promise.all([
+    const [wps, ms, ev, dr, cap] = await Promise.all([
       supabase.from('order_waypoints').select('*').eq('order_id', id).order('seq'),
       supabase.from('order_missions').select('extra_fare, missions(id, name)').eq('order_id', id),
       supabase.from('order_events').select('id, type, from_status, to_status, reason, data, created_at').eq('order_id', id).order('created_at'),
       r.driver_id ? supabase.from('profiles').select('name, phone').eq('id', r.driver_id).maybeSingle() : Promise.resolve({ data: null }),
+      r.capital_company_id ? supabase.from('capital_companies').select('name').eq('id', r.capital_company_id).maybeSingle() : Promise.resolve({ data: null }),
     ]);
     if (mine !== seq.current) return;
     setOrder({
       ...(r as unknown as Order),
       pickup: stopOf(r, 'pickup'),
       dropoff: stopOf(r, 'dropoff'),
+      capital_name: (cap.data as { name: string } | null)?.name ?? null,
       waypoints: (wps.data ?? []) as unknown as Stop[],
       missions: (ms.data ?? []).map(m => {
         const x = m as unknown as { extra_fare: number; missions: { id: string; name: string } | null };

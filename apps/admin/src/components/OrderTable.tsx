@@ -21,6 +21,8 @@ type Ctx = {
   companyName: (id: string) => string;
   driverName: (id: string | null) => string;
   late: boolean;
+  /** 관제 확인을 기다리는 서류가 있음 */
+  docWait: boolean;
 };
 type Col = { id: string; head: string; th?: string; td?: string; cell: (o: OrderRow, c: Ctx) => ReactNode };
 
@@ -34,6 +36,7 @@ const COLS: Col[] = [
   { id: 'route', head: '출발 → 도착', td: 'w-full max-w-0 min-w-[12rem]', cell: o => (
     <div className="truncate" title={`${o.pickup_address} → ${o.dropoff_address}`}>
       {o.kind === 'daeri' && <span className="mr-1 rounded bg-slate-200 px-1 text-xs">대리</span>}
+      {o.kind === 'docs' && <span className="mr-1 rounded bg-orange-100 px-1 text-xs text-orange-800">서류</span>}
       {placeOf(o.pickup_area, o.pickup_address)} → {placeOf(o.dropoff_area, o.dropoff_address)}
     </div>
   ) },
@@ -45,6 +48,7 @@ const COLS: Col[] = [
   { id: 'status', head: '상태', cell: (o, c) => <>
     <span className={`rounded px-1.5 py-0.5 text-xs ${STATUS_COLOR[o.status]}`}>{STATUS_LABEL[o.status]}</span>
     {c.late && <span className="ml-1 text-xs font-semibold">배차 늦음</span>}
+    {c.docWait && <span className="ml-1 rounded bg-orange-100 px-1 text-xs font-semibold text-orange-800">서류 확인 대기</span>}
   </> },
   { id: 'detail', head: '상세', cell: o => <>
     <Link href={`/orders/${o.id}`} onClick={e => e.stopPropagation()} className="text-road hover:underline">상세</Link>
@@ -67,7 +71,7 @@ function useColumnOrder() {
   return { order, move: (from: string, to: string) => save(moveColumn(order, from, to)), reset: () => save(IDS) };
 }
 
-export function OrderTable({ orders, companyName, driverName, selectedId, onSelect, now, alertMin }: {
+export function OrderTable({ orders, companyName, driverName, selectedId, onSelect, now, alertMin, docWait }: {
   orders: OrderRow[];
   companyName: (id: string) => string;
   driverName: (id: string | null) => string;
@@ -75,6 +79,7 @@ export function OrderTable({ orders, companyName, driverName, selectedId, onSele
   onSelect: (id: string) => void;
   now: Date | null;
   alertMin: number;
+  docWait: Set<string>;
 }) {
   const { order, move, reset } = useColumnOrder();
   const [dragging, setDragging] = useState<string | null>(null);
@@ -111,7 +116,7 @@ export function OrderTable({ orders, companyName, driverName, selectedId, onSele
         {orders.map(o => {
           const late = now !== null && isUnassignedOverdue(o, now, alertMin);
           const selected = o.id === selectedId;
-          const ctx: Ctx = { companyName, driverName, late };
+          const ctx: Ctx = { companyName, driverName, late, docWait: docWait.has(o.id) };
           return (
             <tr key={o.id} onClick={() => onSelect(o.id)} aria-selected={selected} data-late={late || undefined}
               className={`cursor-pointer border-b ${selected ? 'bg-road-soft' : late ? 'bg-red-50 text-red-700' : 'hover:bg-slate-50'}`}>

@@ -3,7 +3,7 @@ import { cardView, searchOrders, sortByFare, sortOpenOrders, type OpenOrder } fr
 
 const o = (p: Partial<OpenOrder>): OpenOrder => ({
   id: 'X', order_no: '1119-001', kind: 'takson', reserved_at: null, pickup_area: '강남구 역삼동', dropoff_area: '수원시 영통구',
-  fare: 35000, payment_method: 'postpaid', distance_km: null, mission_names: [], ...p,
+  fare: 35000, payment_method: 'postpaid', distance_km: null, mission_names: [], capital_name: null, ...p,
 });
 
 test('일반 오더는 가까운 순, 거리 모르는 건 뒤, 예약은 그 뒤에 예약 시간 순 (서버 순서와 같음)', () => {
@@ -21,7 +21,7 @@ test('카드 표시', () => {
   const v = cardView(o({ reserved_at: '2026-11-18T05:00:00Z', distance_km: 3.24, payment_method: 'cash', kind: 'daeri' }));
   expect(v).toEqual({
     title: '강남구 역삼동 → 수원시 영통구', badge: '[예약] 11/18 14:00', distance: '3.2km', fare: '35,000원',
-    pay: '현금', kindLabel: '대리',
+    pay: '현금', kindLabel: '대리', docs: null,
   });
   const plain = cardView(o({}));
   expect(plain.badge).toBeNull();
@@ -50,4 +50,11 @@ test('금액순: 비싼 오더 먼저', () => {
 
 test('동네 이름이 없으면 대신 표시', () => {
   expect(cardView(o({ pickup_area: null, dropoff_area: null })).title).toBe('출발지 → 도착지');
+});
+
+test('서류탁송 배지', () => {
+  const v = cardView(o({ kind: 'docs', capital_name: 'KB할부' }));
+  expect(v.docs).toBe('서류 · KB할부');
+  expect(v.kindLabel).toBe('서류탁송');
+  expect(cardView(o({ kind: 'docs' })).docs).toBe('서류');
 });

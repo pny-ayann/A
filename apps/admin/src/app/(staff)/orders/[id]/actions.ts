@@ -81,3 +81,22 @@ export async function setOrderStatus(orderId: string, status: OrderStatus, reaso
   if (error) return { ok: false, message: errorMessage(error.message) };
   return done(orderId, '상태를 바꿨어요.');
 }
+
+/** 서류 인정/불인정 (불인정이면 이유 필수, 기사에게 알림) */
+export async function reviewDocument(orderId: string, docId: string, ok: boolean, reason: string, takenAt: string): Promise<Result> {
+  const supabase = await staff();
+  if (!supabase) return LOGIN_NEEDED;
+  // takenAt: 화면에 보인 서류. 그 사이 기사님이 다시 찍었으면 서버가 DOC_CHANGED로 거절
+  const { error } = await supabase.rpc('review_document', { p_doc_id: docId, p_ok: ok, p_reason: reason.trim() || null, p_taken_at: takenAt });
+  if (error) return { ok: false, message: errorMessage(error.message) };
+  return done(orderId, ok ? '인정했어요.' : '불인정했어요. 기사님께 알렸어요.');
+}
+
+/** 차량 사진 불인정 (다시 찍을 수 있는 동안만) */
+export async function rejectPhoto(orderId: string, photoId: string, reason: string): Promise<Result> {
+  const supabase = await staff();
+  if (!supabase) return LOGIN_NEEDED;
+  const { error } = await supabase.rpc('reject_photo', { p_photo_id: photoId, p_reason: reason.trim() || null });
+  if (error) return { ok: false, message: errorMessage(error.message) };
+  return done(orderId, '불인정했어요. 기사님께 알렸어요.');
+}

@@ -83,3 +83,11 @@ test('권한 거부여도 로그인이 풀렸거나(신호 나빠 갱신 실패)
   expect(resolveDrop({ hasSession: true, stillMine: true })).toBe('retry');
   expect(resolveDrop({ hasSession: true, stillMine: false })).toBe('drop');
 });
+
+test('서류는 docs 폴더 경로', () => {
+  expect(storagePath(item({ phase: 'docs', slot: 'seal' }))).toEqual({ bucket: 'order-photos', path: 'O1/docs/seal.jpg' });
+});
+test('같은 서류 칸을 다시 찍으면 바꿔 끼운다', () => {
+  const q = enqueue([item({ id: 'a', phase: 'docs', slot: 'seal' })], item({ id: 'b', phase: 'docs', slot: 'seal' }));
+  expect(q.map(x => x.id)).toEqual(['b']);
+});

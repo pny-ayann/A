@@ -31,6 +31,8 @@ export function OrderBoard({ initialOrders, companies, drivers, alertMin, initia
   const [reservedOnly, setReservedOnly] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [now, setNow] = useState<Date | null>(null);
+  // 관제 확인을 기다리는 서류가 있는 오더 (기사님이 출발을 못 하고 기다림)
+  const [docWait, setDocWait] = useState<Set<string>>(new Set());
 
   // 미배차 경고는 1분마다 다시 계산
   useEffect(() => {
@@ -42,15 +44,23 @@ export function OrderBoard({ initialOrders, companies, drivers, alertMin, initia
   // 실시간 구독. 연결될 때마다 목록을 새로 받아 그 사이 놓친 변경을 메운다
   useEffect(() => {
     const supabase = browserClient();
+    const refetchDocs = async () => {
+      // 출발 전(수락함) 오더만: 운행이 시작됐거나 끝난 오더의 남은 대기 서류는 표시하지 않는다
+      const { data } = await supabase.from('order_documents').select('order_id, orders!inner(status)')
+        .eq('status', 'pending').eq('orders.status', 'arrived_pickup');
+      if (data) setDocWait(new Set((data as { order_id: string }[]).map(d => d.order_id)));
+    };
     const refetch = async () => {
       const { data } = await supabase.from('orders').select(ORDER_ROW_COLUMNS)
         .or(`status.in.(open,assigned,arrived_pickup,driving),created_at.gte.${boardSince(new Date())}`)
         .order('created_at', { ascending: false }).limit(500);
       if (data) setOrders(data as OrderRow[]);
+      await refetchDocs();
     };
     return subscribeAuthed(supabase, () => supabase.channel('order-board')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' },
         (p: RealtimePostgresChangesPayload<OrderRow>) => setOrders(list => applyChange(list, p as unknown as OrderChange)))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'order_documents' }, () => void refetchDocs())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'driver_locations' }, (p: RealtimePostgresChangesPayload<DriverLocation>) => {
         const row = (p.eventType === 'DELETE' ? p.old : p.new) as DriverLocation;
         setLocations(cur => {
@@ -140,7 +150,7 @@ export function OrderBoard({ initialOrders, companies, drivers, alertMin, initia
 
         <div className="min-h-0 flex-1 overflow-auto rounded border bg-white">
           <OrderTable orders={shown} companyName={companyName} driverName={driverName}
-            selectedId={selectedId} onSelect={setSelectedId} now={now} alertMin={alertMin} />
+            selectedId={selectedId} onSelect={setSelectedId} now={now} alertMin={alertMin} docWait={docWait} />
         </div>
         <p className="mt-1 text-xs text-slate-500">진행 중인 오더와 최근 7일 오더를 보여 줘요. 줄을 누르면 지도에 표시돼요.</p>
       </div>

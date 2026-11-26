@@ -8,9 +8,10 @@ const put = (user: string, bucket: string, name: string) =>
 const list = async (user: string, bucket: string) =>
   (await as(w.db, user, tx => tx.query<{ name: string }>('select name from storage.objects where bucket_id=$1', [bucket]))).rows.map(r => r.name);
 
-test('버킷 3개가 비공개로 만들어진다', async () => {
+test('버킷 4개가 비공개로 만들어진다', async () => {
   const r = await w.db.query('select id, public from storage.buckets order by id');
   expect(r.rows).toEqual([
+    { id: 'capital-examples', public: false },
     { id: 'driver-docs', public: false },
     { id: 'order-photos', public: false },
     { id: 'receipts', public: false },

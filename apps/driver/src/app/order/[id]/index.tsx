@@ -1,8 +1,9 @@
-import { errorMessage } from '@takson/shared';
+import { errorMessage, KIND_LABEL } from '@takson/shared';
 import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { DocSlots } from '@/components/DocSlots';
 import { PhotoSlots } from '@/components/PhotoSlots';
 import { StopBlock } from '@/components/StopBlock';
 import { useAuth } from '@/lib/auth/AuthProvider';
@@ -21,7 +22,7 @@ const STATUS_LABEL = {
 export default function OrderDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { profile } = useAuth();
-  const { order, missing, gone, settings, reload } = useOrder(id, profile?.id);
+  const { order, missing, gone, settings, docs, rejected, reload } = useOrder(id, profile?.id);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ text: string; tone: 'ok' | 'danger' } | null>(null);
   const [now, setNow] = useState(() => new Date());
@@ -49,7 +50,7 @@ export default function OrderDetail() {
   const photoPhase = order.status === 'driving' ? 'dropoff' : order.status === 'arrived_pickup' ? 'pickup' : null; // 수락 화면(assigned)에선 사진 칸을 숨긴다
   // 이 오더의 모든 대기(칸·추가 사진, 영수증): 남은 채로 상태가 넘어가면 서버가 받지 않는다
   const pendingUploads = photoPhase ? queue.pending(id) : 0;
-  const action = nextAction(order.status, missing, pendingUploads);
+  const action = nextAction(order.status, missing, pendingUploads, order.status === 'arrived_pickup' ? docs?.state ?? null : null);
   const canRelease = order.assigned_at && (order.status === 'assigned' || order.status === 'arrived_pickup');
   const releaseLeft = canRelease ? releaseRemainingMs(order.assigned_at!, order.kind, settings, now) : 0;
   const mmss = `${Math.floor(releaseLeft / 60000)}:${String(Math.floor(releaseLeft / 1000) % 60).padStart(2, '0')}`;
@@ -80,7 +81,7 @@ export default function OrderDetail() {
         <Card>
           <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             <Text style={{ fontSize: 20, fontWeight: '800', color: done ? color.ok : color.primary }}>{STATUS_LABEL[order.status]}</Text>
-            <Text style={{ fontSize: 16, color: color.sub }}>{order.order_no} · {order.kind === 'daeri' ? '대리' : '탁송'}</Text>
+            <Text style={{ fontSize: 16, color: color.sub }}>{order.order_no} · {KIND_LABEL[order.kind]}</Text>
             {order.reserved_at ? <Text style={{ fontSize: 16, fontWeight: '800', color: color.warn }}>[예약] {kstShort(order.reserved_at)}</Text> : null}
             <Text style={{ marginLeft: 'auto', fontSize: 20, fontWeight: '800', color: color.text }}>
               {won(order.fare)} · <Text style={{ color: order.payment_method === 'cash' ? color.ok : color.danger }}>{order.payment_method === 'cash' ? '현금' : '후불'}</Text>
@@ -100,7 +101,13 @@ export default function OrderDetail() {
         </Card>
         {photoPhase && (
           <Card>
-            <PhotoSlots orderId={id} phase={photoPhase} missing={photoPhase === 'pickup' ? missing.pickup : missing.dropoff} />
+            <PhotoSlots orderId={id} phase={photoPhase} missing={photoPhase === 'pickup' ? missing.pickup : missing.dropoff}
+              rejected={rejected[photoPhase]} />
+          </Card>
+        )}
+        {order.kind === 'docs' && order.status === 'arrived_pickup' && docs && (
+          <Card>
+            <DocSlots orderId={id} docs={docs} sealCount={order.seal_count} capitalId={order.capital_company_id} reload={reload} />
           </Card>
         )}
         {(order.status === 'arrived_pickup' || order.status === 'driving') && (

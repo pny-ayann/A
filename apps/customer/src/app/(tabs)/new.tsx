@@ -31,7 +31,7 @@ function blankForm(companyId: string, payment: 'cash' | 'postpaid'): OrderForm {
   return {
     companyId, kind: 'takson', pickup: emptyPlace(), dropoff: emptyPlace(), waypoints: [],
     vehicleNumber: '', vehicleModel: '', vehicleColor: '', transmission: '', driverMemo: '',
-    missionIds: [], reservedAt: null, paymentMethod: payment, fare: null, distanceKm: null, staffOnly: false,
+    missionIds: [], reservedAt: null, paymentMethod: payment, fare: null, distanceKm: null, staffOnly: false, capitalCompanyId: null,
   };
 }
 
@@ -44,6 +44,7 @@ export default function NewOrder() {
   const [top, setTop] = useState<Place[]>([]);
   const [bands, setBands] = useState<FareBand[]>([]);
   const [missions, setMissions] = useState<Mission[]>([]);
+  const [capitals, setCapitals] = useState<{ id: string; name: string }[]>([]);
   const [km, setKm] = useState<number | null>(null);
   const [routeFailed, setRouteFailed] = useState(false);
   const [edited, setEdited] = useState<number | null>(null);
@@ -59,14 +60,16 @@ export default function NewOrder() {
   useFocusEffect(useCallback(() => {
     if (!companyId) return;
     void (async () => {
-      const [b, m, c, t] = await Promise.all([
+      const [b, m, c, t, cap] = await Promise.all([
         supabase.from('fare_bands').select('max_km, fare'),
         supabase.from('missions').select('id, name, extra_fare').eq('active', true).order('name'),
         supabase.from('companies').select('default_payment').eq('id', companyId).maybeSingle(),
         supabase.rpc('top_addresses', { p_company_id: companyId }),
+        supabase.from('capital_companies').select('id, name').eq('active', true).order('sort').order('name'),
       ]);
       setBands((b.data ?? []) as FareBand[]);
       setMissions((m.data ?? []) as Mission[]);
+      setCapitals((cap.data ?? []) as { id: string; name: string }[]);
       const pay = (c.data as { default_payment: 'cash' | 'postpaid' } | null)?.default_payment ?? 'postpaid';
       setDefaultPay(pay);
       // 고객이 결제 방법을 직접 고른 뒤에는 업체 기본값으로 되돌리지 않는다
@@ -132,9 +135,21 @@ export default function NewOrder() {
       <Title>오더 접수</Title>
 
       <View style={{ flexDirection: 'row', gap: 8 }}>
-        <Chip label="탁송" on={form.kind === 'takson'} onPress={() => set({ kind: 'takson' })} />
+        <Chip label="일반탁송" on={form.kind === 'takson'} onPress={() => set({ kind: 'takson' })} />
+        <Chip label="서류탁송" on={form.kind === 'docs'} onPress={() => set({ kind: 'docs' })} />
         <Chip label="대리" on={form.kind === 'daeri'} onPress={() => set({ kind: 'daeri' })} />
       </View>
+      {form.kind === 'docs' && (
+        <View style={{ gap: 6 }}>
+          <Body>캐피탈 회사</Body>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            {capitals.map(c => (
+              <Chip key={c.id} label={c.name} on={form.capitalCompanyId === c.id} onPress={() => set({ capitalCompanyId: c.id })} />
+            ))}
+          </View>
+          {capitals.length === 0 && <Body sub>등록된 캐피탈 회사가 없어요. 관제에 알려 주세요.</Body>}
+        </View>
+      )}
 
       <PlaceInput title="출발지" value={form.pickup} onChange={pickup => set({ pickup })} top={top} />
       {form.waypoints.map((w, i) => (
