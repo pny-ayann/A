@@ -13,7 +13,7 @@ import { BigButton, Body, Card, color, Field, Notice } from '@/ui/kit';
 
 type Receipt = { id: string; amount: number; created_at: string };
 
-/** 주유 등록: 금액 → 영수증 촬영 → 대기열(신호 없으면 나중에 올라감). 출발지 도착·운행 중에만 */
+/** 주유 등록: 금액 → 영수증 촬영 → 대기열(신호 없으면 나중에 올라감). 오더수락 뒤·운행 중에만 */
 export default function Fuel() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { profile } = useAuth();
@@ -64,7 +64,7 @@ export default function Fuel() {
     <SafeAreaView style={{ flex: 1, backgroundColor: color.bg }} edges={['left', 'right', 'bottom']}>
       <Stack.Screen options={{ headerShown: true, title: '주유 등록' }} />
       <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }} keyboardShouldPersistTaps="handled">
-        {order && !open && <Notice>주유 등록은 출발지 도착 뒤부터 운행 중까지만 할 수 있어요.</Notice>}
+        {order && !open && <Notice>주유 등록은 오더수락 뒤부터 운행 중까지만 할 수 있어요.</Notice>}
         {open && (
           <Card>
             <Field label="주유 금액 (원)" value={text} onChangeText={setText} keyboardType="number-pad" placeholder="예: 45000" />

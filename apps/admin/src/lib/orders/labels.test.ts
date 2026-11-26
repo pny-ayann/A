@@ -23,7 +23,7 @@ test('배차된 오더는 경고 없음', () => {
 });
 
 test('상태 한국어', () => {
-  expect(STATUS_LABEL.arrived_pickup).toBe('출발지 도착');
+  expect(STATUS_LABEL.arrived_pickup).toBe('수락함');
   expect(STATUS_LABEL.open).toBe('접수');
   expect(STATUS_LABEL.cancelled).toBe('취소');
 });
