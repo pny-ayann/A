@@ -87,7 +87,7 @@ export default function OrderDetail() {
               {won(order.fare)} · <Text style={{ color: order.payment_method === 'cash' ? color.ok : color.danger }}>{order.payment_method === 'cash' ? '현금' : '후불'}</Text>
             </Text>
           </View>
-          <StopBlock title="출발지" stop={order.pickup} full={accepted} nav={false} />
+          <StopBlock title={order.kind === 'docs' ? '★팩스★ 출발지' : '출발지'} stop={order.pickup} full={accepted} nav={false} />
           {order.waypoints.map((w, i) => <StopBlock key={i} title={`경유지 ${i + 1}`} stop={w} full={accepted} />)}
           <StopBlock title="도착지" stop={order.dropoff} full={accepted} />
         </Card>

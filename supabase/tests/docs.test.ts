@@ -199,8 +199,26 @@ describe('권한과 저장소', () => {
 });
 
 describe('접수와 목록', () => {
-  test('서류탁송인데 캐피탈 회사 없으면 CAPITAL_REQUIRED', async () => {
+  test('고객은 서류탁송을 접수할 수 없다 (관제만)', async () => {
+    const cap = await seedCapital(w.db, { pages: 0 });
     const r = as(w.db, w.a, tx => tx.query('select create_order($1, $2, $3)', [
+      JSON.stringify({ company_id: w.A, kind: 'docs', capital_company_id: cap.companyId,
+        pickup_address: '가', dropoff_address: '나', payment_method: 'postpaid', fare: 1000 }),
+      '[]', [],
+    ]));
+    await expectError(r, 'DOCS_STAFF_ONLY');
+  });
+
+  test('고객이 직접 insert해도 서류탁송은 막는다', async () => {
+    const cap = await seedCapital(w.db, { pages: 0 });
+    const r = as(w.db, w.a, tx => tx.query(
+      `insert into orders(company_id, kind, capital_company_id, pickup_address, dropoff_address, payment_method, fare)
+       values ($1, 'docs', $2, '가', '나', 'postpaid', 1000)`, [w.A, cap.companyId]));
+    await expectError(r, 'DOCS_STAFF_ONLY');
+  });
+
+  test('서류탁송인데 캐피탈 회사 없으면 CAPITAL_REQUIRED', async () => {
+    const r = as(w.db, w.op, tx => tx.query('select create_order($1, $2, $3)', [
       JSON.stringify({ company_id: w.A, kind: 'docs', pickup_address: '가', dropoff_address: '나', payment_method: 'postpaid', fare: 1000 }),
       '[]', [],
     ]));
@@ -209,7 +227,7 @@ describe('접수와 목록', () => {
 
   test('create_order가 캐피탈 회사를 저장한다', async () => {
     const cap = await seedCapital(w.db, { pages: 0 });
-    const r = await as(w.db, w.a, tx => tx.query<{ id: string }>('select create_order($1, $2, $3) id', [
+    const r = await as(w.db, w.op, tx => tx.query<{ id: string }>('select create_order($1, $2, $3) id', [
       JSON.stringify({ company_id: w.A, kind: 'docs', capital_company_id: cap.companyId,
         pickup_address: '가', dropoff_address: '나', payment_method: 'postpaid', fare: 1000 }),
       '[]', [],

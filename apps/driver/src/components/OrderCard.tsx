@@ -14,7 +14,7 @@ export function OrderCard({ order, onGrab, busy }: { order: OpenOrder; onGrab: (
         <View style={s.row}>
           {/* 거리를 모르면 칸을 숨긴다 (위쪽 안내가 위치를 켜라고 알려 줌) */}
           {order.distance_km !== null && <Text style={s.dist}>{v.distance}</Text>}
-          <Text style={s.route} numberOfLines={1}>{order.pickup_area || '출발지'}</Text>
+          <Text style={s.route} numberOfLines={1}>{v.pickup}</Text>
         </View>
         <Text style={s.route} numberOfLines={1}>→ {order.dropoff_area || '도착지'}</Text>
         <View style={s.row}>

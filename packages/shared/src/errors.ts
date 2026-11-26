@@ -7,6 +7,7 @@ const messages: Record<string, string> = {
   RELEASE_WINDOW_PASSED: '반납 가능 시간이 지났어요. 관제에 문의해 주세요.',
   PHOTOS_REQUIRED: '필수 사진을 모두 올려 주세요.',
   CAPITAL_REQUIRED: '캐피탈 회사를 골라 주세요.',
+  DOCS_STAFF_ONLY: '서류탁송은 관제에서만 접수할 수 있어요.',
   SEAL_COUNT_REQUIRED: '인감 수량을 적어 주세요.',
   DOCS_REQUIRED: '빠졌거나 다시 찍어야 할 서류가 있어요.',
   DOCS_NOT_APPROVED: '관제가 서류를 확인하는 중이에요. 확인되면 출발할 수 있어요.',

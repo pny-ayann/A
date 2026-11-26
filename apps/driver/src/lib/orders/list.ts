@@ -45,6 +45,7 @@ export function cardView(o: OpenOrder) {
     fare: won(o.fare),
     pay: o.payment_method === 'cash' ? '현금' as const : '후불' as const,
     kindLabel: KIND_LABEL[o.kind],
-    docs: o.kind === 'docs' ? (o.capital_name ? `서류 · ${o.capital_name}` : '서류') : null,
+    pickup: `${o.kind === 'docs' ? '★팩스★ ' : ''}${o.pickup_area || '출발지'}`,
+    docs: o.kind === 'docs' ? o.capital_name : null,
   };
 }

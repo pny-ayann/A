@@ -57,7 +57,7 @@ export function OrderEditForm({ orderId, initial, updatedAt, companies, capitals
           {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
         <select aria-label="종류" value={f.kind} onChange={e => patch({ kind: e.target.value as OrderForm['kind'] })} className={input}>
-          <option value="takson">일반탁송</option>
+          <option value="takson">탁송</option>
           <option value="docs">서류탁송</option>
           <option value="daeri">대리</option>
         </select>
