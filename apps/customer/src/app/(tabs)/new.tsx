@@ -31,7 +31,7 @@ function blankForm(companyId: string, payment: 'cash' | 'postpaid'): OrderForm {
   return {
     companyId, kind: 'takson', pickup: emptyPlace(), dropoff: emptyPlace(), waypoints: [],
     vehicleNumber: '', vehicleModel: '', vehicleColor: '', transmission: '', driverMemo: '',
-    missionIds: [], reservedAt: null, paymentMethod: payment, fare: null, distanceKm: null, staffOnly: false,
+    missionIds: [], reservedAt: null, paymentMethod: payment, fare: null, distanceKm: null, staffOnly: false, capitalCompanyId: null,
   };
 }
 

@@ -99,6 +99,7 @@ export function rowToForm(r: Row): OrderForm {
     transmission: (r.transmission as Transmission | null) ?? '', driverMemo: str(r.driver_memo), missionIds: [],
     reservedAt: (r.reserved_at as string | null) ?? null, paymentMethod: r.payment_method as PaymentMethod,
     fare: num(r.fare), distanceKm: num(r.distance_km), staffOnly: r.dispatch_mode === 'staff_only',
+    capitalCompanyId: (r.capital_company_id as string | null) ?? null,
   };
 }
 
