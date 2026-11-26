@@ -144,3 +144,29 @@ export async function createWorld() {
   const dp = await createUser(db, { loginId: 'driver3', role: 'driver', driverStatus: 'pending' });
   return { db, A, B, a, b, admin, op, d, d2, dp };
 }
+
+/** 캐피탈 회사 + 예시 사진 행. cover면 첫 장(seq 1)이 표지 */
+export async function seedCapital(
+  db: PGlite, o: { name?: string; pages?: number; cover?: boolean } = {},
+): Promise<{ companyId: string; exampleIds: string[] }> {
+  const c = await db.query<{ id: string }>('insert into capital_companies(name) values ($1) returning id',
+    [o.name ?? `캐피탈${next()}`]);
+  const companyId = c.rows[0]!.id;
+  const exampleIds: string[] = [];
+  for (let i = 1; i <= (o.pages ?? 2); i++) {
+    const r = await db.query<{ id: string }>(
+      'insert into capital_examples(company_id, seq, title, path, is_cover) values ($1, $2, $3, $4, $5) returning id',
+      [companyId, i, `양식${i}`, `${companyId}/${i}.jpg`, !!o.cover && i === 1]);
+    if (!(o.cover && i === 1)) exampleIds.push(r.rows[0]!.id);
+  }
+  return { companyId, exampleIds };
+}
+
+/** 서류 사진(파일 + 행, 관제 확인 전) */
+export async function seedDocs(db: PGlite, orderId: string, slots: string[]): Promise<void> {
+  for (const s of slots) {
+    const path = `${orderId}/docs/${s}.jpg`;
+    await db.query(`insert into storage.objects(bucket_id, name) values ('order-photos', $1)`, [path]);
+    await db.query('insert into order_documents(order_id, slot, path) values ($1, $2, $3)', [orderId, s, path]);
+  }
+}
