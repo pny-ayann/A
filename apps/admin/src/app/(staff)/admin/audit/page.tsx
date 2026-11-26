@@ -114,7 +114,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
                 <td className="px-2 whitespace-nowrap">
                   {TABLE_LABEL[r.table_name] ?? r.table_name} {ACTION_LABEL[r.action] ?? r.action}
                   {r.table_name === 'orders' && r.row_id && (
-                    <Link href={`/orders/${r.row_id}`} className="ml-1 text-xs text-blue-600 hover:underline">오더 보기</Link>
+                    <Link href={`/orders/${r.row_id}`} className="ml-1 text-xs text-road hover:underline">오더 보기</Link>
                   )}
                 </td>
                 <td className="px-2 py-1.5"><Changes row={r} nameOf={nameOf} /></td>

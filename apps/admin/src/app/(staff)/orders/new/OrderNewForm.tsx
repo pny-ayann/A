@@ -106,7 +106,7 @@ export function OrderNewForm({ companies, bands, missions }: { companies: Compan
         <div className="flex gap-1 text-sm">
           {(['takson', 'daeri'] as const).map(k => (
             <button key={k} type="button" onClick={() => patch({ kind: k })}
-              className={`rounded border px-3 py-1 ${f.kind === k ? 'bg-slate-800 text-white' : 'hover:bg-slate-50'}`}>
+              className={`rounded border px-3 py-1 ${f.kind === k ? 'bg-ink text-white' : 'hover:bg-slate-50'}`}>
               {k === 'takson' ? '탁송' : '대리'}
             </button>
           ))}
@@ -120,8 +120,8 @@ export function OrderNewForm({ companies, bands, missions }: { companies: Compan
             {top.map(p => (
               <span key={`${p.address}|${p.detail}`} className="flex items-center gap-1 rounded-full border bg-white px-3 py-1 text-xs">
                 <span title={p.address}>{p.area ?? p.address}{p.detail ? ` · ${p.detail}` : ''}</span>
-                <button type="button" onClick={() => fillFromTop(p, 'pickup')} className="text-blue-600 hover:underline">출발</button>
-                <button type="button" onClick={() => fillFromTop(p, 'dropoff')} className="text-blue-600 hover:underline">도착</button>
+                <button type="button" onClick={() => fillFromTop(p, 'pickup')} className="text-road hover:underline">출발</button>
+                <button type="button" onClick={() => fillFromTop(p, 'dropoff')} className="text-road hover:underline">도착</button>
               </span>
             ))}
           </div>
@@ -142,20 +142,20 @@ export function OrderNewForm({ companies, bands, missions }: { companies: Compan
       </section>
 
       <section className="flex flex-wrap gap-2">
-        <input aria-label="차량번호" placeholder="차량번호 (필수)" value={f.vehicleNumber}
-          onChange={e => patch({ vehicleNumber: e.target.value })} className={`${input} w-36`} />
-        <input aria-label="차종" placeholder="차종" value={f.vehicleModel}
-          onChange={e => patch({ vehicleModel: e.target.value })} className={`${input} w-36`} />
-        <input aria-label="색상" placeholder="색상" value={f.vehicleColor}
-          onChange={e => patch({ vehicleColor: e.target.value })} className={`${input} w-24`} />
-        <select aria-label="변속기" value={f.transmission}
-          onChange={e => patch({ transmission: e.target.value as OrderForm['transmission'] })} className={input}>
+        <label className="flex flex-col gap-0.5 text-xs font-medium text-slate-600 w-36">차량번호 (필수)<input aria-label="차량번호" value={f.vehicleNumber}
+          onChange={e => patch({ vehicleNumber: e.target.value })} className={`${input} w-full text-sm font-normal text-ink`} /></label>
+        <label className="flex flex-col gap-0.5 text-xs font-medium text-slate-600 w-36">차종<input aria-label="차종" value={f.vehicleModel}
+          onChange={e => patch({ vehicleModel: e.target.value })} className={`${input} w-full text-sm font-normal text-ink`} /></label>
+        <label className="flex flex-col gap-0.5 text-xs font-medium text-slate-600 w-24">색상<input aria-label="색상" value={f.vehicleColor}
+          onChange={e => patch({ vehicleColor: e.target.value })} className={`${input} w-full text-sm font-normal text-ink`} /></label>
+        <label className="flex flex-col gap-0.5 text-xs font-medium text-slate-600">변속기<select aria-label="변속기" value={f.transmission}
+          onChange={e => patch({ transmission: e.target.value as OrderForm['transmission'] })} className={`${input} text-sm font-normal text-ink`}>
           <option value="">변속기 모름</option>
           <option value="auto">오토</option>
           <option value="manual">수동</option>
-        </select>
-        <textarea aria-label="기사 메모" placeholder="기사에게 남길 메모" value={f.driverMemo} rows={2}
-          onChange={e => patch({ driverMemo: e.target.value })} className={`${input} w-full`} />
+        </select></label>
+        <label className="flex flex-col gap-0.5 text-xs font-medium text-slate-600 w-full">기사 메모<textarea aria-label="기사 메모" placeholder="기사에게 남길 말" value={f.driverMemo} rows={2}
+          onChange={e => patch({ driverMemo: e.target.value })} className={`${input} w-full text-sm font-normal text-ink`} /></label>
       </section>
 
       {missions.length > 0 && (
@@ -211,7 +211,7 @@ export function OrderNewForm({ companies, bands, missions }: { companies: Compan
           </button>
         )}
         <button type="button" onClick={submit} disabled={pending}
-          className="ml-auto rounded bg-blue-600 px-5 py-2 font-semibold text-white disabled:opacity-50">
+          className="ml-auto rounded bg-road px-5 py-2 font-semibold text-white disabled:opacity-50">
           {pending ? '접수 중…' : '접수'}
         </button>
       </section>

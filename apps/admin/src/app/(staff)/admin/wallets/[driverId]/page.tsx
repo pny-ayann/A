@@ -29,7 +29,7 @@ export default async function DriverWalletPage({ params }: { params: Promise<{ d
 
   return (
     <div className="max-w-4xl space-y-5">
-      <Link href="/admin/wallets" className="text-sm text-blue-700 underline">← 충전금</Link>
+      <Link href="/admin/wallets" className="text-sm text-road underline">← 충전금</Link>
       <h1 className="text-xl font-bold">{d.name ?? d.login_id} 충전금</h1>
       <div className="flex gap-6 text-sm">
         <div>잔액 <b className={s.balance < 0 ? 'text-red-600' : ''}>{won(s.balance)}</b></div>

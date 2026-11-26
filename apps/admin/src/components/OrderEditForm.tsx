@@ -80,20 +80,20 @@ export function OrderEditForm({ orderId, initial, updatedAt, companies }: {
       <AddressPicker label="도착지" value={f.dropoff} onChange={p => patchPlace('dropoff', p)} />
 
       <div className="flex flex-wrap gap-2">
-        <input aria-label="차량번호" placeholder="차량번호 (필수)" value={f.vehicleNumber}
-          onChange={e => patch({ vehicleNumber: e.target.value })} className={`${input} w-36`} />
-        <input aria-label="차종" placeholder="차종" value={f.vehicleModel}
-          onChange={e => patch({ vehicleModel: e.target.value })} className={`${input} w-36`} />
-        <input aria-label="색상" placeholder="색상" value={f.vehicleColor}
-          onChange={e => patch({ vehicleColor: e.target.value })} className={`${input} w-24`} />
-        <select aria-label="변속기" value={f.transmission}
-          onChange={e => patch({ transmission: e.target.value as OrderForm['transmission'] })} className={input}>
+        <label className="flex flex-col gap-0.5 text-xs font-medium text-slate-600 w-36">차량번호 (필수)<input aria-label="차량번호" value={f.vehicleNumber}
+          onChange={e => patch({ vehicleNumber: e.target.value })} className={`${input} w-full text-sm font-normal text-ink`} /></label>
+        <label className="flex flex-col gap-0.5 text-xs font-medium text-slate-600 w-36">차종<input aria-label="차종" value={f.vehicleModel}
+          onChange={e => patch({ vehicleModel: e.target.value })} className={`${input} w-full text-sm font-normal text-ink`} /></label>
+        <label className="flex flex-col gap-0.5 text-xs font-medium text-slate-600 w-24">색상<input aria-label="색상" value={f.vehicleColor}
+          onChange={e => patch({ vehicleColor: e.target.value })} className={`${input} w-full text-sm font-normal text-ink`} /></label>
+        <label className="flex flex-col gap-0.5 text-xs font-medium text-slate-600">변속기<select aria-label="변속기" value={f.transmission}
+          onChange={e => patch({ transmission: e.target.value as OrderForm['transmission'] })} className={`${input} text-sm font-normal text-ink`}>
           <option value="">변속기 모름</option>
           <option value="auto">오토</option>
           <option value="manual">수동</option>
-        </select>
-        <textarea aria-label="기사 메모" placeholder="기사에게 남길 메모" value={f.driverMemo} rows={2}
-          onChange={e => patch({ driverMemo: e.target.value })} className={`${input} w-full`} />
+        </select></label>
+        <label className="flex flex-col gap-0.5 text-xs font-medium text-slate-600 w-full">기사 메모<textarea aria-label="기사 메모" placeholder="기사에게 남길 말" value={f.driverMemo} rows={2}
+          onChange={e => patch({ driverMemo: e.target.value })} className={`${input} w-full text-sm font-normal text-ink`} /></label>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -104,7 +104,7 @@ export function OrderEditForm({ orderId, initial, updatedAt, companies }: {
         </label>
         {moved && <span className="text-xs text-amber-700">주소가 바뀌었어요. 요금이 맞는지 확인해 주세요.</span>}
         <button type="button" onClick={submit} disabled={pending}
-          className="ml-auto rounded bg-blue-600 px-4 py-1.5 text-sm font-semibold text-white disabled:opacity-50">
+          className="ml-auto rounded bg-road px-4 py-1.5 text-sm font-semibold text-white disabled:opacity-50">
           {pending ? '저장 중…' : '저장'}
         </button>
       </div>

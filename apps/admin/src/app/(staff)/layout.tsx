@@ -1,6 +1,6 @@
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
+import { NavLink } from '@/components/NavLink';
 import { UnreadBadge } from '@/components/UnreadBadge';
 import { getStaffProfile } from '@/lib/supabase/server';
 import { logout } from '../login/actions';
@@ -28,20 +28,20 @@ export default async function StaffLayout({ children }: { children: ReactNode })
   const isAdmin = me.staff_level === 'admin';
   return (
     <div className="flex min-h-screen">
-      <nav className="flex w-52 shrink-0 flex-col bg-slate-800 p-4 text-slate-100">
-        <div className="mb-6 text-lg font-bold">탁송 관제</div>
-        {staffMenu.map(m => <Link key={m.href} href={m.href} className="rounded px-2 py-1.5 hover:bg-slate-700">{m.label}</Link>)}
-        <Link href="/inquiries" className="flex items-center rounded px-2 py-1.5 hover:bg-slate-700">문의<UnreadBadge /></Link>
+      <nav className="flex w-52 shrink-0 flex-col bg-ink p-4 text-slate-100">
+        <div className="mb-6"><span className="plate text-lg">탁송 관제</span></div>
+        {staffMenu.map(m => <NavLink key={m.href} href={m.href} except={m.href === '/orders' ? ['/orders/new'] : undefined}>{m.label}</NavLink>)}
+        <NavLink href="/inquiries">문의<UnreadBadge /></NavLink>
         {!isAdmin && (
           <>
-            <Link href="/admin/drivers" className="rounded px-2 py-1.5 hover:bg-slate-700">기사 조회</Link>
-            <Link href="/admin/companies" className="rounded px-2 py-1.5 hover:bg-slate-700">업체 조회</Link>
+            <NavLink href="/admin/drivers">기사 조회</NavLink>
+            <NavLink href="/admin/companies">업체 조회</NavLink>
           </>
         )}
         {isAdmin && (
           <>
             <div className="mt-6 mb-1 px-2 text-xs text-slate-400">관리자</div>
-            {adminMenu.map(m => <Link key={m.href} href={m.href} className="rounded px-2 py-1.5 hover:bg-slate-700">{m.label}</Link>)}
+            {adminMenu.map(m => <NavLink key={m.href} href={m.href}>{m.label}</NavLink>)}
           </>
         )}
         <div className="mt-auto pt-6 text-sm">

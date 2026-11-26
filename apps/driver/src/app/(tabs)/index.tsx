@@ -1,15 +1,15 @@
 import { errorMessage } from '@takson/shared';
 import { router, useFocusEffect, type Href } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { DeviceEventEmitter, FlatList, RefreshControl, View } from 'react-native';
+import { DeviceEventEmitter, FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { OrderCard } from '@/components/OrderCard';
 import { currentPosition, type LatLng } from '@/lib/location/current';
 import { PUSH_RECEIVED } from '@/lib/push/PushSetup';
-import { sortOpenOrders, type OpenOrder } from '@/lib/orders/list';
+import { searchOrders, sortByFare, sortOpenOrders, type OpenOrder } from '@/lib/orders/list';
 import { supabase } from '@/lib/supabase';
 import { useFocusedInterval } from '@/lib/useInterval';
-import { Body, color, Notice, Title } from '@/ui/kit';
+import { BigButton, Body, color, Notice, Title } from '@/ui/kit';
 
 export default function OpenOrders() {
   const [rows, setRows] = useState<OpenOrder[]>([]);
@@ -19,6 +19,11 @@ export default function OpenOrders() {
   const [noLocation, setNoLocation] = useState(false);
   const [negative, setNegative] = useState(false);
   const pos = useRef<LatLng | null>(null);
+  const [sort, setSort] = useState<'dist' | 'fare'>('dist');
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+  const found = searchOrders(rows, from, to);
+  const shown = sort === 'fare' ? sortByFare(found) : found; // rows는 이미 거리순
 
   const load = useCallback(async (withSpinner = false) => {
     if (withSpinner) setLoading(true);
@@ -57,22 +62,51 @@ export default function OpenOrders() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: color.bg }} edges={['top', 'left', 'right']}>
+      <View style={s.top}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <Title>주문 목록</Title>
+          <Text style={{ marginLeft: 'auto', fontSize: 14, color: color.sub }}>{shown.length}개</Text>
+          {(['dist', 'fare'] as const).map(k => (
+            <Pressable key={k} accessibilityRole="button" accessibilityState={{ selected: sort === k }} onPress={() => setSort(k)}
+              style={[s.chip, sort === k && { backgroundColor: color.primary, borderColor: color.primary }]}>
+              <Text style={[s.chipText, sort === k && { color: '#fff' }]}>{k === 'dist' ? '거리순' : '금액순'}</Text>
+            </Pressable>
+          ))}
+        </View>
+        <View style={{ flexDirection: 'row', gap: 6 }}>
+          <TextInput value={from} onChangeText={setFrom} placeholder="출발지 검색" accessibilityLabel="출발지 검색" style={s.input} placeholderTextColor={color.sub} />
+          <TextInput value={to} onChangeText={setTo} placeholder="도착지 검색" accessibilityLabel="도착지 검색" style={s.input} placeholderTextColor={color.sub} />
+        </View>
+      </View>
       <FlatList
-        data={rows}
+        data={shown}
         keyExtractor={r => r.id}
-        contentContainerStyle={{ padding: 16, gap: 12 }}
+        contentContainerStyle={{ padding: 12, paddingTop: 8, gap: 6 }}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void load(true)} />}
         ListHeaderComponent={
-          <View style={{ gap: 10 }}>
-            <Title>주문 목록</Title>
+          <View style={{ gap: 8 }}>
             {negative && <Notice tone="danger">충전금이 마이너스라 오더를 잡을 수 없어요. 충전금 탭을 확인해 주세요.</Notice>}
             {noLocation && <Notice>위치를 켜면 내 위치에서 가까운 순으로 보여요.</Notice>}
             {message && <Notice tone="danger">{message}</Notice>}
           </View>
         }
-        ListEmptyComponent={loading ? undefined : <Body sub>지금 잡을 수 있는 오더가 없어요. 화면을 아래로 당기면 새로 고쳐요.</Body>}
+        ListEmptyComponent={loading ? undefined : rows.length > 0 ? (
+          <Body sub>검색에 맞는 오더가 없어요. 검색 글자를 지워 보세요.</Body>
+        ) : (
+          <View style={{ gap: 12 }}>
+            <Body sub>지금 잡을 수 있는 오더가 없어요. 새 오더가 들어오면 알림이 와요.</Body>
+            <BigButton label="새로 고침" tone="plain" onPress={() => void load(true)} />
+          </View>
+        )}
         renderItem={({ item }) => <OrderCard order={item} busy={grabbing === item.id} onGrab={() => void grab(item.id)} />}
       />
     </SafeAreaView>
   );
 }
+
+const s = StyleSheet.create({
+  top: { gap: 8, paddingHorizontal: 12, paddingTop: 12, paddingBottom: 8, backgroundColor: color.bg, borderBottomWidth: 1, borderColor: color.line },
+  chip: { minHeight: 40, paddingHorizontal: 12, borderRadius: 20, borderWidth: 1, borderColor: color.line, backgroundColor: '#fff', justifyContent: 'center' },
+  chipText: { fontSize: 15, fontWeight: '700', color: color.text },
+  input: { flex: 1, minHeight: 46, borderWidth: 1, borderColor: color.line, borderRadius: 10, backgroundColor: '#fff', paddingHorizontal: 12, fontSize: 16, color: color.text },
+});

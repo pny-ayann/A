@@ -6,7 +6,9 @@ export default function TabsLayout() {
     <Tabs screenOptions={{
       headerShown: false,
       tabBarActiveTintColor: color.primary,
-      tabBarLabelStyle: { fontSize: 15, fontWeight: '600' },
+      tabBarInactiveTintColor: color.sub,
+      tabBarActiveBackgroundColor: color.primarySoft, // 색만이 아니라 바탕으로도 지금 탭을 알린다
+      tabBarLabelStyle: { fontSize: 15, fontWeight: '700' },
       tabBarStyle: { height: 64, paddingBottom: 8 },
       tabBarIconStyle: { display: 'none' },
     }}>

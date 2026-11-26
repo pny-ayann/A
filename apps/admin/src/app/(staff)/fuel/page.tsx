@@ -38,7 +38,7 @@ export default async function FuelPage() {
                 {claims.map(c => (
                   <tr key={c.receipt_id} className="border-b">
                     <td><input type="checkbox" name="receipt" value={c.receipt_id} aria-label={`${c.order_no} 주유비 선택`} /></td>
-                    <td className="py-1"><Link href={`/orders/${c.order_id}`} className="text-blue-700 underline">{c.order_no}</Link></td>
+                    <td className="py-1"><Link href={`/orders/${c.order_id}`} className="text-road underline">{c.order_no}</Link></td>
                     <td>{c.company_name}</td>
                     <td className="whitespace-nowrap">{kst(c.created_at)}</td>
                     <td className="text-right font-semibold">{won(c.amount)}</td>

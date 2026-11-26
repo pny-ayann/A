@@ -32,11 +32,11 @@ export default async function CompanyBillingPage({ params, searchParams }: {
 
   return (
     <div className="max-w-5xl space-y-4">
-      <Link href={`/admin/billing?month=${month}`} className="text-sm text-blue-700 underline">← 업체 정산</Link>
+      <Link href={`/admin/billing?month=${month}`} className="text-sm text-road underline">← 업체 정산</Link>
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold">{name} 정산서</h1>
         <a href={`/api/billing/excel?company=${companyId}&month=${month}`}
-          className="rounded bg-blue-600 px-3 py-1 text-sm font-semibold text-white">엑셀 내려받기</a>
+          className="rounded bg-road px-3 py-1 text-sm font-semibold text-white">엑셀 내려받기</a>
       </div>
       <p className="text-sm text-slate-600">기간 {monthRange(month)}</p>
       {failed && <p className="text-sm text-red-600">정산서를 불러오지 못했어요. 잠시 뒤 새로고침해 주세요.</p>}
@@ -57,7 +57,7 @@ export default async function CompanyBillingPage({ params, searchParams }: {
                 <td className="py-1">{l.order_no}</td>
                 <td>{kstDate(l.completed_at)}</td>
                 <td>{l.pickup_area} → {l.dropoff_area}</td>
-                <td>{l.vehicle_number}</td>
+                <td>{l.vehicle_number && <span className="plate">{l.vehicle_number}</span>}</td>
                 <td>{l.missions}</td>
                 <td className="text-right">{won(l.fare)}</td>
                 <td className="text-right">{won(l.fuel)}</td>

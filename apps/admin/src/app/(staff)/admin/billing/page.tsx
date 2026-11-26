@@ -70,8 +70,8 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
                   </span>
                 </td>
                 <td className="space-x-2 text-right whitespace-nowrap">
-                  <Link href={`/admin/billing/${r.company_id}?month=${month}`} className="text-blue-700 underline">보기</Link>
-                  <a href={`/api/billing/excel?company=${r.company_id}&month=${month}`} className="text-blue-700 underline">엑셀</a>
+                  <Link href={`/admin/billing/${r.company_id}?month=${month}`} className="text-road underline">보기</Link>
+                  <a href={`/api/billing/excel?company=${r.company_id}&month=${month}`} className="text-road underline">엑셀</a>
                 </td>
               </tr>
             ))}
@@ -91,7 +91,7 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
                 <span className="w-40">{d.company_name}</span>
                 <span className="w-28">{label(ym(d.month))}</span>
                 <span className="w-28 text-right font-semibold">{won(d.due)}</span>
-                <Link href={`/admin/billing/${d.company_id}?month=${ym(d.month)}`} className="text-blue-700 underline">보기</Link>
+                <Link href={`/admin/billing/${d.company_id}?month=${ym(d.month)}`} className="text-road underline">보기</Link>
               </li>
             ))}
           </ul>

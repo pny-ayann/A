@@ -11,6 +11,9 @@ export type OrderRow = {
   reserved_at: string | null;
   pickup_area: string | null;
   dropoff_area: string | null;
+  pickup_address: string;
+  dropoff_address: string;
+  vehicle_number: string | null;
   pickup_lat: number | null;
   pickup_lng: number | null;
   dropoff_lat: number | null;
@@ -23,7 +26,7 @@ export type OrderRow = {
 };
 
 export const ORDER_ROW_COLUMNS =
-  'id, order_no, status, kind, company_id, driver_id, reserved_at, pickup_area, dropoff_area, pickup_lat, pickup_lng, dropoff_lat, dropoff_lng, fare, payment_method, dispatch_mode, created_at, updated_at';
+  'id, order_no, status, kind, company_id, driver_id, reserved_at, pickup_area, dropoff_area, pickup_address, dropoff_address, vehicle_number, pickup_lat, pickup_lng, dropoff_lat, dropoff_lng, fare, payment_method, dispatch_mode, created_at, updated_at';
 
 export type OrderChange = {
   eventType: 'INSERT' | 'UPDATE' | 'DELETE';

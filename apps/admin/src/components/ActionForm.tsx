@@ -15,7 +15,7 @@ type Props = {
 export function ActionForm({ action, children, submit, className = 'flex flex-wrap items-center gap-2', primary }: Props) {
   const [result, run, pending] = useActionState<ActionResult, FormData>(action, null);
   const btn = primary
-    ? 'rounded bg-blue-600 px-3 py-1 text-sm font-semibold text-white disabled:opacity-50'
+    ? 'rounded bg-road px-3 py-1 text-sm font-semibold text-white disabled:opacity-50'
     : 'rounded border px-3 py-1 text-sm hover:bg-slate-50 disabled:opacity-50';
   return (
     <form action={run} className={className}>

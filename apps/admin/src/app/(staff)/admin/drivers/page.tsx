@@ -48,7 +48,7 @@ export default async function DriversPage({ searchParams }: { searchParams: Prom
         <div className="mb-4 flex gap-2 text-sm">
           {FILTERS.map(f => (
             <Link key={f.key} href={f.key ? `/admin/drivers?status=${f.key}` : '/admin/drivers'}
-              className={`rounded border px-3 py-1 ${status === f.key ? 'bg-slate-800 text-white' : 'hover:bg-slate-50'}`}>
+              className={`rounded border px-3 py-1 ${status === f.key ? 'bg-ink text-white' : 'hover:bg-slate-50'}`}>
               {f.label}
             </Link>
           ))}
@@ -81,7 +81,7 @@ export default async function DriversPage({ searchParams }: { searchParams: Prom
                 </td>
                 <td>
                   {(docsOf.get(d.id) ?? []).map(doc => (
-                    <a key={doc.kind} href={doc.url} target="_blank" rel="noreferrer" className="mr-2 text-blue-600 underline">
+                    <a key={doc.kind} href={doc.url} target="_blank" rel="noreferrer" className="mr-2 text-road underline">
                       {DOC_LABEL[doc.kind] ?? doc.kind}
                     </a>
                   ))}

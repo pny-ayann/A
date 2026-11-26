@@ -25,3 +25,6 @@ export function isUnassignedOverdue(
     : new Date(o.created_at).getTime() + ms;
   return now.getTime() >= deadline;
 }
+
+/** 지역이 없으면 주소 앞 두 마디 (예: '서울 중구') */
+export const placeOf = (area: string | null, address: string) => area || address.split(' ').slice(0, 2).join(' ');

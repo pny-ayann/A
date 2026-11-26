@@ -9,7 +9,7 @@ import { splitTabs, type ListOrder } from '@/lib/orders/list';
 import { PUSH_RECEIVED } from '@/lib/push/PushSetup';
 import { supabase } from '@/lib/supabase';
 import { kstShort, won } from '@/lib/time';
-import { color } from '@/ui/kit';
+import { BigButton, color, Plate, Title } from '@/ui/kit';
 
 type Row = ListOrder & {
   pickup_area: string | null; pickup_address: string; dropoff_area: string | null; dropoff_address: string;
@@ -69,6 +69,7 @@ export default function MyOrders() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: color.bg }} edges={['top', 'left', 'right']}>
+      <View style={{ paddingHorizontal: 16, paddingTop: 16 }}><Title>내 오더</Title></View>
       <View style={{ flexDirection: 'row', gap: 8, padding: 16, paddingBottom: 8 }}>
         {(['active', 'done'] as const).map(k => (
           <Pressable key={k} accessibilityRole="button" onPress={() => setTab(k)}
@@ -86,9 +87,12 @@ export default function MyOrders() {
         refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void load()} />}
         contentContainerStyle={{ padding: 16, paddingTop: 8, gap: 10 }}
         ListEmptyComponent={
-          <Text style={{ fontSize: 17, color: color.sub, textAlign: 'center', marginTop: 40 }}>
-            {tab === 'active' ? '진행 중인 오더가 없어요. 아래 "오더 접수"에서 넣어 주세요.' : '끝난 오더가 없어요.'}
-          </Text>
+          <View style={{ gap: 12, marginTop: 40 }}>
+            <Text style={{ fontSize: 17, color: color.sub, textAlign: 'center' }}>
+              {tab === 'active' ? '진행 중인 오더가 없어요.' : '끝난 오더가 없어요.'}
+            </Text>
+            {tab === 'active' && <BigButton label="오더 접수하기" onPress={() => router.push('/new' as Href)} />}
+          </View>
         }
         renderItem={({ item: r }) => (
           <Pressable accessibilityRole="button" onPress={() => router.push(`/order/${r.id}` as Href)}
@@ -102,7 +106,10 @@ export default function MyOrders() {
             <Text style={{ fontSize: 18, fontWeight: '600', color: color.text }}>
               {r.pickup_area || r.pickup_address} → {r.dropoff_area || r.dropoff_address}
             </Text>
-            <Text style={{ fontSize: 15, color: color.sub }}>{r.vehicle_number ?? '차량번호 없음'} · {won(r.fare)}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <Plate number={r.vehicle_number} />
+              <Text style={{ fontSize: 16, color: color.sub }}>{won(r.fare)}</Text>
+            </View>
             {unread[r.id] ? <Text style={{ fontSize: 15, fontWeight: '700', color: color.danger }}>관제 새 메시지 {unread[r.id]}</Text> : null}
           </Pressable>
         )} />

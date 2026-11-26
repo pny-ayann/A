@@ -12,7 +12,7 @@ import { usePhotoQueue } from '@/lib/photos/PhotoQueueProvider';
 import { useOrder } from '@/lib/orders/useOrder';
 import { supabase } from '@/lib/supabase';
 import { kstShort, won } from '@/lib/time';
-import { BigButton, Body, Card, color, Field, Notice } from '@/ui/kit';
+import { BigButton, Body, Card, color, Field, Notice, Plate } from '@/ui/kit';
 
 const STATUS_LABEL = {
   open: '접수', assigned: '배차됨', arrived_pickup: '출발지 도착', driving: '운행 중', completed: '완료', cancelled: '취소',
@@ -93,8 +93,9 @@ export default function OrderDetail() {
         </Card>
         <Card>
           <Body style={{ fontWeight: '700' }}>차량</Body>
-          <Body>{[order.vehicle_number, order.vehicle_model, order.vehicle_color,
-            order.transmission === 'auto' ? '오토' : order.transmission === 'manual' ? '수동' : null].filter(Boolean).join(' · ') || '정보 없음'}</Body>
+          <Plate number={order.vehicle_number} />
+          <Body>{[order.vehicle_model, order.vehicle_color,
+            order.transmission === 'auto' ? '오토' : order.transmission === 'manual' ? '수동' : null].filter(Boolean).join(' · ') || '차종 정보 없음'}</Body>
           {order.missions.length > 0 ? <Body>미션: {order.missions.join(', ')}</Body> : null}
           {order.driver_memo ? <Body>메모: {order.driver_memo}</Body> : null}
         </Card>
