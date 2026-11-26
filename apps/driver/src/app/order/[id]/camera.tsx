@@ -27,6 +27,7 @@ export default function OrderCamera() {
 
   return (
     <CameraCapture key={current} label={`${label}${todo.length > 1 ? `  (남은 ${todo.length}장)` : ''}`}
+      frame={isExtra ? undefined : phase === 'docs' ? 'doc' : 'car'}
       onCancel={() => router.back()}
       onShot={async (uri, size) => {
         await add({ uri, ...size }, { kind: 'photo', orderId: id, phase, slot: isExtra ? null : current });
