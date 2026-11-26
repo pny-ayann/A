@@ -4,7 +4,7 @@ import { STATUS_LABEL } from './labels';
 
 /** 필수 사진 칸 (서버 missing_photos와 같은 순서) */
 export const PHOTO_SLOTS = REQUIRED_SLOTS;
-export const SLOT_LABEL: Record<PhotoSlot, string> = { front: '앞', back: '뒤', left: '왼쪽', right: '오른쪽', dashboard: '계기판' };
+export const SLOT_LABEL: Record<PhotoSlot, string> = { front: '앞', back: '뒤', left: '왼쪽', right: '오른쪽', dashboard: '계기판', key: '차키' };
 
 export type MissingPhotos = { pickup: string[]; dropoff: string[] };
 

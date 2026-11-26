@@ -76,7 +76,7 @@ describe('상태 변경', () => {
     await setStatus(w.op, o, 'completed', '기사 휴대폰 고장');
     expect((await row(o)).status).toBe('completed');
     const ev = (await w.db.query(`select actor_id, reason, data from order_events where order_id=$1 and type='photo_override'`, [o])).rows;
-    expect(ev).toEqual([{ actor_id: w.op, reason: '기사 휴대폰 고장', data: { missing: { dropoff: ['front', 'back', 'left', 'right', 'dashboard'] } } }]);
+    expect(ev).toEqual([{ actor_id: w.op, reason: '기사 휴대폰 고장', data: { missing: { dropoff: ['front', 'back', 'left', 'right', 'dashboard', 'key'] } } }]);
   });
 
   test('출발 사진 없이 운행 중으로 바꾸려면 사유가 필요하다', async () => {

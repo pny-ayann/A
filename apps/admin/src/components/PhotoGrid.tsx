@@ -19,7 +19,7 @@ function Thumb({ url, label }: { url: string | null; label: string }) {
   );
 }
 
-/** 출발·도착 필수 사진 5칸(빠진 칸 표시), 추가 사진, 주유 영수증 */
+/** 출발·도착 필수 사진 6칸(빠진 칸 표시), 추가 사진, 주유 영수증 */
 export function PhotoGrid({ photos, receipts }: { photos: SignedPhoto[]; receipts: SignedReceipt[] }) {
   const find = (phase: string, slot: string) => photos.find(p => p.phase === phase && p.slot === slot);
   const extras = photos.filter(p => p.phase === 'extra');
@@ -28,9 +28,9 @@ export function PhotoGrid({ photos, receipts }: { photos: SignedPhoto[]; receipt
       {(['pickup', 'dropoff'] as const).map(phase => (
         <div key={phase}>
           <h3 className="mb-1 text-sm font-semibold">{phase === 'pickup' ? '출발 사진' : '도착 사진'}</h3>
-          {/* 한 장도 없으면 빈 칸 5개 대신 한 줄로 (일부만 있을 때는 빠진 칸을 보여 준다) */}
+          {/* 한 장도 없으면 빈 칸 6개 대신 한 줄로 (일부만 있을 때는 빠진 칸을 보여 준다) */}
           {!photos.some(p => p.phase === phase) ? <p className="text-xs text-slate-500">아직 사진이 없어요.</p> : (
-          <div className="grid grid-cols-5 gap-2">
+          <div className="grid grid-cols-6 gap-2">
             {PHOTO_SLOTS.map(slot => {
               const p = find(phase, slot);
               return (
@@ -47,7 +47,7 @@ export function PhotoGrid({ photos, receipts }: { photos: SignedPhoto[]; receipt
       {extras.length > 0 && (
         <div>
           <h3 className="mb-1 text-sm font-semibold">추가 사진 {extras.length}장</h3>
-          <div className="grid grid-cols-5 gap-2">
+          <div className="grid grid-cols-6 gap-2">
             {extras.map((p, i) => <Thumb key={i} url={p.url} label={`추가 ${i + 1}`} />)}
           </div>
         </div>
@@ -57,7 +57,7 @@ export function PhotoGrid({ photos, receipts }: { photos: SignedPhoto[]; receipt
         {receipts.length === 0
           ? <p className="text-xs text-slate-500">없어요.</p>
           : (
-            <div className="grid grid-cols-5 gap-2">
+            <div className="grid grid-cols-6 gap-2">
               {receipts.map(r => (
                 <figure key={r.id}>
                   <Thumb url={r.url} label="영수증" />

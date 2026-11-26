@@ -1,3 +1,4 @@
+import { REQUIRED_SLOTS } from '@takson/shared';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Image, Modal, Pressable, Text, View } from 'react-native';
@@ -59,7 +60,7 @@ export default function Photos() {
   const grid = (list: (PhotoRow | null)[]) => (
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
       {list.map((x, i) => {
-        const slot = (['front', 'back', 'left', 'right', 'dashboard'] as const)[i]!;
+        const slot = REQUIRED_SLOTS[i]!;
         const url = x ? urls[x.path] ?? null : null;
         return <Thumb key={slot} label={SLOT_LABEL[slot]} url={url} sub={x ? kstShort(x.taken_at) : undefined} onOpen={() => setOpen(url)} />;
       })}

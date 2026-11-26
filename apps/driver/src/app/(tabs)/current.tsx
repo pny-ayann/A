@@ -8,7 +8,7 @@ import { useFocusedInterval } from '@/lib/useInterval';
 import { kstShort, won } from '@/lib/time';
 import { BigButton, Body, Card, color, Notice, Screen, Title } from '@/ui/kit';
 
-const STATUS: Record<string, string> = { assigned: '배차됨', arrived_pickup: '출발지 도착', driving: '운행 중' };
+const STATUS: Record<string, string> = { assigned: '배차됨', arrived_pickup: '수락함', driving: '운행 중' };
 
 export default function Current() {
   const { profile } = useAuth();

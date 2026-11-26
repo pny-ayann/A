@@ -15,7 +15,7 @@ export function nextAction(status: OrderStatus, missing: Missing, pendingUploads
     return { label, enabled: false, hint: `${phaseName} 사진 ${left.length}장이 더 필요해요` };
   };
   switch (status) {
-    case 'assigned': return { label: '출발지 도착', enabled: true, hint: null };
+    case 'assigned': return { label: '오더수락', enabled: true, hint: null };
     case 'arrived_pickup': return gated('운행 시작', '출발', missing.pickup);
     case 'driving': return gated('도착 완료', '도착', missing.dropoff);
     default: return null;

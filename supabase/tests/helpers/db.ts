@@ -117,7 +117,7 @@ export async function seedOrder(db: PGlite, companyId: string, o: Record<string,
   return r.rows[0]!.id;
 }
 
-export const SLOTS = ['front', 'back', 'left', 'right', 'dashboard'];
+export const SLOTS = ['front', 'back', 'left', 'right', 'dashboard', 'key'];
 
 export async function seedPhotos(
   db: PGlite, orderId: string, phase: 'pickup' | 'dropoff', slots: string[] = SLOTS,
