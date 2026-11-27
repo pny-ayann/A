@@ -27,12 +27,23 @@ const messages: Record<string, string> = {
   AMOUNT_CHANGED: '그 사이 청구금액이 바뀌었어요. 새로고침해서 금액을 다시 확인한 뒤 체크해 주세요.',
   NOT_FOUND: '오더를 찾을 수 없어요.',
   INVALID_LOGIN_ID: '아이디는 영문 소문자, 숫자, _ 로 3~20자예요.',
+  FARE_DECREASE: '배차된 뒤에는 요금을 낮출 수 없어요. 관제에 문의해 주세요.',
+  RECEIPT_DRIVER: '그 오더를 맡은 기사 앞으로만 영수증을 넣을 수 있어요.',
+  TOKEN_IN_USE: '이 휴대폰은 다른 계정에서 알림을 받고 있어요.',
+};
+
+// 서버 검사 규칙(소문자 이름)으로 거절된 경우
+const constraints: Record<string, string> = {
+  orders_fare_max: '요금은 100만 원까지 넣을 수 있어요.',
+  fuel_receipts_amount_max: '영수증 한 장은 50만 원까지 넣을 수 있어요.',
 };
 
 const fallback = '처리하지 못했어요. 잠시 후 다시 시도해 주세요.';
 
 /** 서버 오류 코드(또는 코드가 들어 있는 오류 문장)를 한국어 문구로 바꾼다. */
 export function errorMessage(codeOrMessage: string): string {
+  const rule = Object.keys(constraints).find(k => codeOrMessage.includes(k));
+  if (rule) return constraints[rule]!;
   const tokens = codeOrMessage.split(/[^A-Z_]+/);
   const code = tokens.find(t => t in messages);
   return code ? messages[code]! : fallback;

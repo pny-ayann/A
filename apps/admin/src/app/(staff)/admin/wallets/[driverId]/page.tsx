@@ -23,6 +23,7 @@ export default async function DriverWalletPage({ params }: { params: Promise<{ d
   ]);
   const d = driver.data as { name: string | null; login_id: string; phone: string | null } | null;
   if (!d) return <p>기사를 찾을 수 없어요.</p>;
+  if (sum.error || entries.error) return <p className="text-sm text-red-600">충전금을 불러오지 못했어요. 잠시 뒤 새로고침해 주세요.</p>;
   const s = ((sum.data ?? []) as Summary[])[0] ?? { balance: 0, withdrawable: 0, pending: 0 };
   const acc = account.data as { bank: string; number: string; holder: string } | null;
   const now = Date.now();

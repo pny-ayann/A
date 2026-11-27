@@ -14,7 +14,7 @@ export default function Current() {
   const { profile } = useAuth();
   const loc = useLocationStatus();
   const [rows, setRows] = useState<ActiveRow[]>([]);
-  const load = useCallback(() => { if (profile) void myActiveOrders(profile.id).then(setRows); }, [profile]);
+  const load = useCallback(() => { if (profile) void myActiveOrders(profile.id).then(setRows, () => { /* 실패하면 보이던 목록 그대로 */ }); }, [profile]);
   useFocusEffect(load);
   useFocusedInterval(load, 15_000);
 

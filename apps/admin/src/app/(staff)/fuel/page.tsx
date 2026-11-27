@@ -12,7 +12,8 @@ type Claim = { receipt_id: string; order_id: string; order_no: string; driver_id
  */
 export default async function FuelPage() {
   const supabase = await serverClient();
-  const { data } = await supabase.rpc('fuel_claims');
+  const { data, error } = await supabase.rpc('fuel_claims');
+  if (error) return <p className="text-sm text-red-600">주유비 청구를 불러오지 못했어요. 잠시 뒤 새로고침해 주세요.</p>;
   const list = ((data ?? []) as Claim[]).sort((a, b) => a.created_at.localeCompare(b.created_at));
   const byDriver = new Map<string, Claim[]>();
   for (const c of list) byDriver.set(c.driver_id, [...(byDriver.get(c.driver_id) ?? []), c]);

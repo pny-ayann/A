@@ -50,22 +50,25 @@ export default async function WalletsPage() {
   }
 
   const sums = await Promise.all(list.map(async d => {
-    const { data } = await supabase.rpc('wallet_summary', { p_driver: d.id });
+    const { data, error } = await supabase.rpc('wallet_summary', { p_driver: d.id });
+    if (error) return null; // 0원으로 보이면 잘못 충전·조정할 수 있어 '—'로 보인다
     return ((data ?? []) as Summary[])[0] ?? { balance: 0, withdrawable: 0, pending: 0 };
   }));
+  const show = (s: Summary | null, k: keyof Summary) => (s ? won(s[k]) : '—');
   return (
     <div className="max-w-4xl space-y-4">
       <h1 className="text-xl font-bold">충전금</h1>
       <p className="text-sm text-slate-600">정산 시작: {kst(startedAt)} · 잔액이 마이너스면 오더를 잡거나 배정받을 수 없어요.</p>
+      {sums.includes(null) && <p className="text-sm text-red-600">일부 기사 잔액을 불러오지 못했어요(—). 잠시 뒤 새로고침해 주세요.</p>}
       <table className="w-full text-sm">
         <thead><tr className="border-b text-left"><th className="py-1">기사</th><th className="text-right">잔액</th><th className="text-right">출금 가능</th><th className="text-right">들어올 예정</th><th /></tr></thead>
         <tbody>
           {list.map((d, i) => (
             <tr key={d.id} className="border-b">
               <td className="py-1">{d.name ?? d.login_id}{d.driver_status === 'suspended' ? ' (정지)' : ''}</td>
-              <td className={`text-right font-semibold ${sums[i]!.balance < 0 ? 'text-red-600' : ''}`}>{won(sums[i]!.balance)}</td>
-              <td className="text-right">{won(sums[i]!.withdrawable)}</td>
-              <td className="text-right text-slate-500">{won(sums[i]!.pending)}</td>
+              <td className={`text-right font-semibold ${(sums[i]?.balance ?? 0) < 0 ? 'text-red-600' : ''}`}>{show(sums[i]!, 'balance')}</td>
+              <td className="text-right">{show(sums[i]!, 'withdrawable')}</td>
+              <td className="text-right text-slate-500">{show(sums[i]!, 'pending')}</td>
               <td className="text-right"><Link href={`/admin/wallets/${d.id}`} className="text-road underline">장부</Link></td>
             </tr>
           ))}

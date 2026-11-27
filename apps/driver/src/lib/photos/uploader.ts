@@ -19,11 +19,13 @@ function fileGone(uri: string): boolean {
  * 같은 일을 두 번 해도 한 줄만 남게 만든다(칸 사진은 같은 경로 덮어쓰기 + upsert, 추가 사진·영수증은 미리 정한 id).
  */
 /** 'denied'는 서버가 거부한 것 — 정말 버릴지는 부르는 쪽이 resolveDrop으로 다시 확인한다 */
-export async function uploadOne(i: QueueItem): Promise<'ok' | 'retry' | 'drop' | 'denied'> {
-  if (fileGone(i.localUri)) return 'drop';
+/** 'gone'은 휴대폰에서 사진 파일이 없어진 것 (서버 탓이 아님) */
+export async function uploadOne(i: QueueItem): Promise<'ok' | 'retry' | 'gone' | 'denied'> {
+  if (fileGone(i.localUri)) return 'gone';
   const { bucket, path } = storagePath(i);
   let body: ArrayBuffer;
-  try { body = await readBytes(i.localUri); } catch { return 'drop'; }
+  // 파일은 있는데 잠깐 못 읽은 것 — 지우지 말고 다시 시도
+  try { body = await readBytes(i.localUri); } catch { return 'retry'; }
 
   const up = await supabase.storage.from(bucket)
     .upload(path, body, { upsert: bucket === 'order-photos', contentType: 'image/jpeg' });

@@ -65,3 +65,14 @@ test('로그인 안 한 사람은 부를 수 없다', async () => {
     await tx.query(`select create_order('{}'::jsonb, '[]'::jsonb, '{}'::uuid[])`);
   }), 'permission denied');
 });
+
+test('관제도 한 번에 접수한다: 아무 업체, 관제 전용, 경유지·미션 포함 (반쪽 오더 없음)', async () => {
+  const r = await create(w.op, { ...order(w.B), dispatch_mode: 'staff_only' }, [wp('수원')], [wash]);
+  const id = r.rows[0]!.id;
+  expect((await w.db.query('select company_id, dispatch_mode from orders where id = $1', [id])).rows[0])
+    .toEqual({ company_id: w.B, dispatch_mode: 'staff_only' });
+  expect(await count('order_waypoints')).toBe(1);
+  expect(await count('order_missions')).toBe(1);
+  await expect(create(w.op, order(w.A), [wp(null)], [])).rejects.toThrow();
+  expect(await count('orders')).toBe(1);
+});
