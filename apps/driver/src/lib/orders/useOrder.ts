@@ -103,10 +103,12 @@ export type ActiveRow = {
 
 /** 내가 진행 중인 오더 목록 (일반 오더 먼저, 예약은 시간 순) */
 export async function myActiveOrders(myId: string): Promise<ActiveRow[]> {
-  const { data } = await supabase.from('orders')
+  const { data, error } = await supabase.from('orders')
     .select('id, kind, status, reserved_at, pickup_area, dropoff_area, fare, payment_method')
     .eq('driver_id', myId).in('status', ['assigned', 'arrived_pickup', 'driving'])
     .order('reserved_at', { ascending: true, nullsFirst: true });
+  // 실패를 빈 목록으로 돌려주면 위치 보내기가 꺼진다 — 부르는 쪽이 예전 값을 지키게 던진다
+  if (error) throw error;
   return (data ?? []) as ActiveRow[];
 }
 

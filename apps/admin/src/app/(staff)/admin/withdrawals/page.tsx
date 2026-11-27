@@ -30,8 +30,10 @@ export default async function WithdrawalsPage() {
     <div className="max-w-5xl space-y-6">
       <h1 className="text-xl font-bold">출금 신청</h1>
       <section className="space-y-3">
-        <h2 className="font-semibold">대기 {waiting.length}건</h2>
-        {waiting.length === 0 && <p className="text-sm text-slate-500">처리할 신청이 없어요.</p>}
+        {reqs.error
+          ? <p className="text-sm text-red-600">출금 신청을 불러오지 못했어요. 잠시 뒤 새로고침해 주세요.</p>
+          : <h2 className="font-semibold">대기 {waiting.length}건</h2>}
+        {!reqs.error && waiting.length === 0 && <p className="text-sm text-slate-500">처리할 신청이 없어요.</p>}
         {waiting.map(r => (
           <div key={r.id} className="space-y-2 rounded border p-3 text-sm">
             <div><b>{nameOf.get(r.driver_id) ?? '기사'}</b> · <b className="text-lg">{won(r.amount)}</b> · {r.bank} {r.number} ({r.holder}) · {kst(r.created_at)} 신청</div>

@@ -16,3 +16,8 @@ test('서류탁송 오류 문구', () => {
 test('그 사이 다시 찍은 서류', () => {
   expect(errorMessage('DOC_CHANGED')).toBe('그 사이 기사님이 서류를 다시 찍었어요. 새로고침해서 다시 확인해 주세요.');
 });
+
+test('0029 새 규칙 문구', () => {
+  expect(errorMessage('new row for relation "orders" violates check constraint "orders_fare_max"')).toBe('요금은 100만 원까지 넣을 수 있어요.');
+  expect(errorMessage('FARE_DECREASE')).toBe('배차된 뒤에는 요금을 낮출 수 없어요. 관제에 문의해 주세요.');
+});

@@ -58,10 +58,13 @@ export function PhotoQueueProvider({ children }: { children: ReactNode }) {
   const ref = useRef<QueueItem[]>([]);
   const running = useRef(false);
 
+  const restored = useRef(false);
   const save = useCallback((q: QueueItem[]) => {
     ref.current = q;
     setItems(q);
-    void AsyncStorage.setItem(KEY, JSON.stringify(q)).catch(() => {});
+    // 복원 전에 쓰면 저장된 대기열을 덮어쓴다
+    if (!restored.current) return;
+    void AsyncStorage.setItem(KEY, JSON.stringify(q)).catch(e => console.warn('사진 대기열 저장 실패', e));
   }, []);
 
   const run = useCallback(async () => {
@@ -70,6 +73,11 @@ export function PhotoQueueProvider({ children }: { children: ReactNode }) {
     try {
       for (const i of due(ref.current, Date.now())) {
         const first = await uploadOne(i);
+        if (first === 'gone') {
+          setDropNotice('휴대폰에서 사진 파일을 찾지 못해 올리지 못한 사진이 있어요. 다시 찍어 주세요.');
+          save(applyResult(ref.current, i.id, 'drop', Date.now()));
+          continue;
+        }
         const r = first === 'denied' ? await confirmDrop(i.orderId) : first;
         if (r !== 'retry') deleteLocal(i.localUri);
         if (r === 'drop') setDropNotice('관제가 오더를 회수·취소해서 올리지 못한 사진이 있어요.');
@@ -84,13 +92,28 @@ export function PhotoQueueProvider({ children }: { children: ReactNode }) {
 
   // 앱을 켤 때 대기열 복원
   useEffect(() => {
-    void AsyncStorage.getItem(KEY).then(raw => {
-      const q = raw ? (JSON.parse(raw) as QueueItem[]) : [];
-      ref.current = q;
-      setItems(q);
+    let stop = false;
+    const restore = async () => {
+      let raw: string | null;
+      try { raw = await AsyncStorage.getItem(KEY); } catch {
+        // 못 읽으면 덮어쓰지 말고 잠시 뒤 다시
+        if (!stop) setTimeout(() => void restore(), 3_000);
+        return;
+      }
+      let stored: QueueItem[] = [];
+      try { stored = raw ? (JSON.parse(raw) as QueueItem[]) : []; } catch {
+        // 깨진 기록은 지우지 않고 따로 남긴다
+        await AsyncStorage.setItem(`${KEY}-broken-${Date.now()}`, raw ?? '').catch(() => {});
+      }
+      if (stop) return;
+      restored.current = true;
+      // 복원 중에 새로 찍은 사진도 함께 둔다
+      save([...stored, ...ref.current.filter(n => !stored.some(s => s.id === n.id))]);
       setLoaded(true);
-    }).catch(() => setLoaded(true));
-  }, []);
+    };
+    void restore();
+    return () => { stop = true; };
+  }, [save]);
 
   // 10초마다, 신호가 돌아올 때, 앱이 앞으로 올 때 올리기
   useEffect(() => {

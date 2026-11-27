@@ -189,7 +189,7 @@ test('화면에서 본 금액과 지금 금액이 다르면 체크하지 않는�
 });
 
 test('한 달 공급가액이 2.15억을 넘어도 계산된다', async () => {
-  await done(w.A, 220000000);
+  for (let i = 0; i < 220; i++) await done(w.A, 1000000); // 한 오더 상한 100만 원 (0029)
   expect((await totals('2026-11-01'))[0]).toMatchObject({ supply: 220000000, vat: 22000000, total: 242000000 });
 });
 
