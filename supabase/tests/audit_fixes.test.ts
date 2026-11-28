@@ -82,6 +82,6 @@ test('접근 규칙의 내 정보 함수는 줄마다가 아니라 한 번만 �
   const r = await w.db.query<{ p: string; q: string | null; c: string | null }>(
     `select policyname p, qual q, with_check c from pg_policies where schemaname in ('public', 'storage')`);
   const bare = r.rows.flatMap(x => [x.q, x.c].filter(Boolean).map(s => ({ p: x.p, s: s! })))
-    .filter(({ s }) => /(?<!SELECT (public\.)?|SELECT )\b(is_admin|is_staff|my_company_id|my_role|auth\.uid)\(\)/.test(s));
+    .filter(({ s }) => /(?<!SELECT (public\.)?|SELECT )\b(is_admin|is_staff|can_settle|my_company_id|my_role|auth\.uid)\(\)/.test(s));
   expect(bare).toEqual([]);
 });

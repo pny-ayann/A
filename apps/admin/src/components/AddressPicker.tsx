@@ -1,15 +1,15 @@
 'use client';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Place } from '@/lib/orders/form';
 
 type DaumPostcodeData = { roadAddress: string; jibunAddress: string; address: string };
 declare global {
   interface Window {
-    daum?: { Postcode: new (o: { oncomplete: (d: DaumPostcodeData) => void }) => { open: () => void } };
+    daum?: { Postcode: new (o: { oncomplete: (d: DaumPostcodeData) => void; width: string; height: string }) => { embed: (el: HTMLElement) => void } };
   }
 }
 
-const POSTCODE_SRC = 'https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
+const POSTCODE_SRC = 'https://t1.kakaocdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
 let postcodeLoading: Promise<void> | null = null;
 function loadPostcode(): Promise<void> {
   if (window.daum?.Postcode) return Promise.resolve();
@@ -35,6 +35,8 @@ export function AddressPicker({ label, value, onChange, onRemove }: {
 }) {
   const [note, setNote] = useState<string | null>(null);
   const latest = useRef(0); // 마지막으로 요청한 주소의 결과만 반영한다
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
 
   async function setAddress(address: string) {
     const ticket = ++latest.current;
@@ -53,14 +55,18 @@ export function AddressPicker({ label, value, onChange, onRemove }: {
     }
   }
 
-  async function search() {
-    try {
-      await loadPostcode();
-      new window.daum!.Postcode({ oncomplete: d => void setAddress(d.roadAddress || d.address) }).open();
-    } catch {
-      setNote('주소 검색 창을 열지 못했어요. 주소를 직접 입력해 주세요.');
-    }
-  }
+  // 새 창(팝업)은 브라우저가 자주 막아서, 페이지 안에 검색 창을 띄운다
+  useEffect(() => {
+    if (!open) return;
+    loadPostcode().then(() => {
+      if (!box.current) return;
+      new window.daum!.Postcode({
+        oncomplete: d => { setOpen(false); void setAddress(d.roadAddress || d.address); },
+        width: '100%', height: '100%',
+      }).embed(box.current);
+    }).catch(() => { setOpen(false); setNote('주소 검색 창을 열지 못했어요. 주소를 직접 입력해 주세요.'); });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 열릴 때 한 번만
+  }, [open]);
 
   return (
     <fieldset className="rounded border p-3">
@@ -70,7 +76,7 @@ export function AddressPicker({ label, value, onChange, onRemove }: {
           onChange={e => { latest.current++; setNote(null); onChange({ address: e.target.value, area: null, lat: null, lng: null }); }}
           onBlur={e => { if (e.target.value.trim() && value.lat === null) void setAddress(e.target.value); }}
           className={`${input} w-full text-ink`} /></label>
-        <button type="button" onClick={search} className="rounded border px-3 py-1 text-sm hover:bg-slate-50">주소 검색</button>
+        <button type="button" onClick={() => setOpen(true)} className="rounded border px-3 py-1 text-sm hover:bg-slate-50">주소 검색</button>
         {onRemove && <button type="button" onClick={onRemove} className="text-sm text-red-600 hover:underline">빼기</button>}
       </div>
       <div className="mt-2 flex flex-wrap gap-2">
@@ -84,6 +90,17 @@ export function AddressPicker({ label, value, onChange, onRemove }: {
       <div className="mt-1 text-xs text-slate-500">
         {value.address ? (note ?? (value.area ? `동네: ${value.area}` : '위치 확인 전')) : ''}
       </div>
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setOpen(false)}>
+          <div role="dialog" aria-label={`${label} 주소 검색`} className="flex h-[480px] w-[420px] max-w-[95vw] flex-col rounded bg-white" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b px-3 py-2 text-sm font-semibold text-ink">
+              {label} 주소 검색
+              <button type="button" onClick={() => setOpen(false)} className="text-slate-500 hover:text-slate-800">닫기</button>
+            </div>
+            <div ref={box} className="min-h-0 flex-1" />
+          </div>
+        </div>
+      )}
     </fieldset>
   );
 }

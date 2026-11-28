@@ -8,7 +8,7 @@ import { BigButton, Body, Field, Screen } from '@/ui/kit';
 // 카카오(다음) 우편번호 서비스: 키 없이 무료로 쓰는 주소 검색 화면. 고르면 앱으로 주소를 보낸다.
 const HTML = `<!doctype html><html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script></head>
+<script src="https://t1.kakaocdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script></head>
 <body style="margin:0"><div id="w" style="width:100%;height:100vh"></div>
 <script>
 new daum.Postcode({

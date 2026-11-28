@@ -2,6 +2,8 @@ import { AccountFields, ActionForm, inputCls } from '@/components/ActionForm';
 import { issueAccount, setStaffLevel } from '@/lib/accounts/actions';
 import { getStaffProfile, serverClient } from '@/lib/supabase/server';
 
+const LEVEL_LABEL: Record<string, string> = { admin: '관리자', accounting: '정산', operator: '일반 관제' };
+
 export default async function StaffPage() {
   const supabase = await serverClient();
   const me = await getStaffProfile();
@@ -22,13 +24,15 @@ export default async function StaffPage() {
                 <td>{s.phone}</td>
                 <td>
                   {s.id === me?.id ? (
-                    <span>{s.staff_level === 'admin' ? '관리자' : '일반 관제'} (나)</span>
+                    <span>{LEVEL_LABEL[s.staff_level ?? ''] ?? '일반 관제'} (나)</span>
                   ) : (
                     <ActionForm action={setStaffLevel} submit="변경">
                       <input type="hidden" name="id" value={s.id} />
                       <select name="staffLevel" defaultValue={s.staff_level ?? 'operator'} aria-label="등급" className={inputCls}>
                         <option value="operator">일반 관제</option>
-                        <option value="admin">관리자</option>
+                        <option value="accounting">정산</option>
+                        <option value="accounting">정산</option>
+            <option value="admin">관리자</option>
                       </select>
                     </ActionForm>
                   )}

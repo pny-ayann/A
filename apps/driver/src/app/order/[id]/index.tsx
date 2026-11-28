@@ -107,7 +107,8 @@ export default function OrderDetail() {
         )}
         {order.kind === 'docs' && order.status === 'arrived_pickup' && docs && (
           <Card>
-            <DocSlots orderId={id} docs={docs} sealCount={order.seal_count} capitalId={order.capital_company_id} reload={reload} />
+            <DocSlots orderId={id} docs={docs} sealCount={order.seal_count} capitalId={order.capital_company_id} reload={reload}
+              pickupMissing={missing.pickup} pickupRejected={rejected.pickup} />
           </Card>
         )}
         {(order.status === 'arrived_pickup' || order.status === 'driving') && (

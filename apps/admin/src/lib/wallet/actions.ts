@@ -1,7 +1,7 @@
 'use server';
 import { errorMessage } from '@takson/shared';
 import { revalidatePath } from 'next/cache';
-import { NOT_ADMIN, requireAdmin, type ActionResult } from '@/lib/admin/guard';
+import { NOT_ADMIN, requireSettle, type ActionResult } from '@/lib/admin/guard';
 import { getStaffProfile, serverClient } from '@/lib/supabase/server';
 import { parseOpenings, parseWon } from './parse';
 
@@ -10,7 +10,7 @@ const fail = (m: string): ActionResult => ({ ok: false, message: errorMessage(m)
 
 /** 정산 시작: 기사별 시작 잔액을 넣고 그 순간부터 자동 정산 (관리자, 한 번만) */
 export async function startSettlement(_prev: ActionResult, form: FormData): Promise<ActionResult> {
-  const ctx = await requireAdmin();
+  const ctx = await requireSettle();
   if (!ctx) return NOT_ADMIN;
   const openings = parseOpenings(form);
   if (typeof openings === 'string') return { ok: false, message: openings };
@@ -22,7 +22,7 @@ export async function startSettlement(_prev: ActionResult, form: FormData): Prom
 
 /** 충전(+) 또는 조정(+/−, 사유 필수) (관리자) */
 export async function walletEntry(_prev: ActionResult, form: FormData): Promise<ActionResult> {
-  const ctx = await requireAdmin();
+  const ctx = await requireSettle();
   if (!ctx) return NOT_ADMIN;
   const kind = text(form, 'kind');
   if (kind !== 'topup' && kind !== 'adjust') return { ok: false, message: '종류가 잘못됐어요.' };
@@ -40,7 +40,7 @@ export async function walletEntry(_prev: ActionResult, form: FormData): Promise<
 
 /** 출금 신청 처리: 지급 완료(메모) / 거절(사유 필수) (관리자) */
 export async function processWithdrawal(_prev: ActionResult, form: FormData): Promise<ActionResult> {
-  const ctx = await requireAdmin();
+  const ctx = await requireSettle();
   if (!ctx) return NOT_ADMIN;
   const result = text(form, 'result');
   const { error } = await ctx.supabase.rpc('process_withdrawal', {

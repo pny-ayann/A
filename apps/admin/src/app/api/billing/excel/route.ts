@@ -1,5 +1,6 @@
 import { buildStatement, type BillingLine, type BillingTotal } from '@/lib/billing/excel';
 import { contentDisposition, linesMatchTotal, parseMonth, statementFileName } from '@/lib/billing/month';
+import { canSettle } from '@/lib/auth/gate';
 import { getStaffProfile, serverClient } from '@/lib/supabase/server';
 
 const ZERO: BillingTotal = { supply: 0, vat: 0, fuel: 0, total: 0 };
@@ -7,7 +8,7 @@ const ZERO: BillingTotal = { supply: 0, vat: 0, fuel: 0, total: 0 };
 /** 업체·달 정산서 엑셀 내려받기 (관리자). 화면과 같은 서버 계산을 쓴다. */
 export async function GET(req: Request) {
   const me = await getStaffProfile();
-  if (me?.staff_level !== 'admin') return new Response('관리자만 내려받을 수 있어요.', { status: 403 });
+  if (!canSettle(me?.staff_level)) return new Response('관리자·정산만 내려받을 수 있어요.', { status: 403 });
   const url = new URL(req.url);
   const company = url.searchParams.get('company') ?? '';
   const month = parseMonth(url.searchParams.get('month') ?? undefined, new Date());

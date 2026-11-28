@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { ActionForm, inputCls } from '@/components/ActionForm';
 import { walletEntry } from '@/lib/wallet/actions';
 import { kst, won } from '@/lib/wallet/format';
+import { canSettle } from '@/lib/auth/gate';
 import { getStaffProfile, serverClient } from '@/lib/supabase/server';
 
 type Entry = { id: string; amount: number; label: string; created_at: string; effective_at: string; withdrawable_at: string | null };
@@ -12,7 +13,7 @@ type Summary = { balance: number; withdrawable: number; pending: number };
 export default async function DriverWalletPage({ params }: { params: Promise<{ driverId: string }> }) {
   const { driverId } = await params;
   const me = await getStaffProfile();
-  if (me?.staff_level !== 'admin') redirect('/orders');
+  if (!canSettle(me?.staff_level)) redirect('/orders');
   const supabase = await serverClient();
   const [driver, sum, entries, account] = await Promise.all([
     supabase.from('profiles').select('name, login_id, phone').eq('id', driverId).single(),

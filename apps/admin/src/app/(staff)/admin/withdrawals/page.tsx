@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { ActionForm, inputCls } from '@/components/ActionForm';
 import { processWithdrawal } from '@/lib/wallet/actions';
 import { kst, won } from '@/lib/wallet/format';
+import { canSettle } from '@/lib/auth/gate';
 import { getStaffProfile, serverClient } from '@/lib/supabase/server';
 
 type Req = {
@@ -14,7 +15,7 @@ const STATUS = { requested: '대기', paid: '지급 완료', rejected: '거절' 
 /** 출금 신청 처리 (관리자): 직접 이체한 뒤 '지급 완료', 아니면 사유를 적고 '거절' */
 export default async function WithdrawalsPage() {
   const me = await getStaffProfile();
-  if (me?.staff_level !== 'admin') redirect('/orders');
+  if (!canSettle(me?.staff_level)) redirect('/orders');
   const supabase = await serverClient();
   const [reqs, drivers] = await Promise.all([
     supabase.from('withdrawal_requests').select('id, driver_id, amount, status, bank, number, holder, memo, reason, created_at, processed_at')

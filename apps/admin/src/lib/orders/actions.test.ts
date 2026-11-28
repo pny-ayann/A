@@ -70,19 +70,14 @@ test('저장된 오더를 수정 폼으로 바꾼다 (빈 값은 빈 칸)', () =
   expect(f.reservedAt).toBe('2026-11-17T01:00:00Z');
 });
 
-test('지난 예약 시간이라도 안 바꿨으면 수정 저장 가능', () => {
-  const f = rowToForm(dbRow);
-  expect(validateOrderEdit(f, dbRow.reserved_at, new Date('2026-11-17T05:00:00Z'))).toBeNull();
-});
-
-test('예약 시간을 지난 시각으로 바꾸면 막는다', () => {
-  const f = { ...rowToForm(dbRow), reservedAt: '2026-11-17T02:00:00Z' };
-  expect(validateOrderEdit(f, dbRow.reserved_at, new Date('2026-11-17T05:00:00Z'))).toBe('예약 시간이 지났어요.');
+test('관제 수정은 예약 시간을 지난 시각으로 바꿔도 된다 (기록 바로잡기)', () => {
+  const f = { ...rowToForm(dbRow), reservedAt: '2020-01-01T02:00:00Z' };
+  expect(validateOrderEdit(f)).toBeNull();
 });
 
 test('수정에서도 필수 칸 검사', () => {
   const f = { ...rowToForm(dbRow), vehicleNumber: ' ' };
-  expect(validateOrderEdit(f, dbRow.reserved_at, new Date('2026-11-17T05:00:00Z'))).toBe('차량번호를 입력해 주세요.');
+  expect(validateOrderEdit(f)).toBe('차량번호를 입력해 주세요.');
 });
 
 import { changedColumns } from './actions';
@@ -108,4 +103,27 @@ test('서류탁송 캐피탈 회사도 수정 칸에 들어간다', () => {
   const before = rowToForm({ kind: 'takson', capital_company_id: null });
   const after = { ...before, kind: 'docs' as const, capitalCompanyId: 'cap1' };
   expect(changedColumns(before, after)).toMatchObject({ kind: 'docs', capital_company_id: 'cap1' });
+});
+
+import { changedExtras } from './actions';
+
+test('경유지·미션은 바뀐 것만 보내고, 안 바뀌면 null', () => {
+  const wp = { address: '부산', detail: '', area: null, lat: null, lng: null, contactName: '', contactPhone: '' };
+  const before = rowToForm(dbRow, [wp], ['m1']);
+  expect(before.waypoints).toEqual([wp]);
+  expect(changedExtras(before, { ...before })).toEqual({ waypoints: null, missionIds: null });
+  const r = changedExtras(before, { ...before, waypoints: [], missionIds: ['m1', 'm2'] });
+  expect(r.waypoints).toEqual([]);
+  expect(r.missionIds).toEqual(['m1', 'm2']);
+  expect(changedExtras(before, { ...before, missionIds: ['m1'] }).missionIds).toBeNull();
+});
+
+test('인감 수를 바꾸면 seal_count도 보낸다', () => {
+  const before = { ...rowToForm(dbRow), sealCount: 2 };
+  expect(changedColumns(before, { ...before, sealCount: 3 })).toEqual({ seal_count: 3 });
+  expect(changedColumns(before, { ...before })).toEqual({});
+});
+
+test('경유지·미션·인감 수 수정 이력', () => {
+  expect(describeEvent({ type: 'edit', data: ['waypoints', 'missions', 'seal_count'] })).toBe('수정: 경유지, 미션, 인감 수');
 });

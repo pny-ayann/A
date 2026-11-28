@@ -1,10 +1,11 @@
 import Link from 'next/link';
 import { AccountFields, ActionForm, inputCls } from '@/components/ActionForm';
 import { issueAccount, setCommission, setDriverStatus } from '@/lib/accounts/actions';
+import { canSettle } from '@/lib/auth/gate';
 import { getStaffProfile, serverClient } from '@/lib/supabase/server';
+import { won } from '@/lib/wallet/format';
 
 const STATUS_LABEL: Record<string, string> = { pending: '대기', active: '승인', suspended: '정지' };
-const DOC_LABEL: Record<string, string> = { license: '면허증', insurance: '보험' };
 const FILTERS = [
   { key: '', label: '전체' },
   { key: 'pending', label: '대기' },
@@ -12,17 +13,16 @@ const FILTERS = [
   { key: 'suspended', label: '정지' },
 ];
 
-/** 관리자는 승인·정지·수수료·발급까지. 일반 관제는 보기만 한다 (설계 8.5, 수수료는 안 보임) */
+/** 관리자·정산은 승인·정지·수수료·발급까지. 일반 관제는 보기만 한다 (설계 8.5, 수수료는 안 보임). 충전금 잔액은 모두 본다 */
 export default async function DriversPage({ searchParams }: { searchParams: Promise<{ status?: string }> }) {
   const { status = '' } = await searchParams;
-  const isAdmin = (await getStaffProfile())?.staff_level === 'admin';
+  const isAdmin = canSettle((await getStaffProfile())?.staff_level);
   const supabase = await serverClient();
   let q = supabase.from('profiles').select('id, login_id, name, phone, driver_status, created_at').eq('role', 'driver');
   if (STATUS_LABEL[status]) q = q.eq('driver_status', status);
-  const [drivers, rates, docs, releases] = await Promise.all([
+  const [drivers, rates, releases] = await Promise.all([
     q.order('created_at', { ascending: false }),
     isAdmin ? supabase.from('driver_rates').select('driver_id, commission_rate') : Promise.resolve({ data: [] as { driver_id: string; commission_rate: number }[] }),
-    supabase.from('driver_documents').select('driver_id, kind, path'),
     supabase.from('order_events').select('actor_id').eq('type', 'released'),
   ]);
 
@@ -31,15 +31,11 @@ export default async function DriversPage({ searchParams }: { searchParams: Prom
   for (const e of releases.data ?? []) {
     if (e.actor_id) releaseCount.set(e.actor_id, (releaseCount.get(e.actor_id) ?? 0) + 1);
   }
-  const docRows = docs.data ?? [];
-  const signed = docRows.length
-    ? (await supabase.storage.from('driver-docs').createSignedUrls(docRows.map(d => d.path), 600)).data ?? []
-    : [];
-  const docsOf = new Map<string, { kind: string; url: string }[]>();
-  docRows.forEach((d, i) => {
-    const url = signed[i]?.signedUrl;
-    if (url) docsOf.set(d.driver_id, [...(docsOf.get(d.driver_id) ?? []), { kind: d.kind, url }]);
-  });
+  // 충전금 잔액 (못 불러오면 null → '—'. 0원으로 보이면 잘못 판단할 수 있어서)
+  const balances = await Promise.all((drivers.data ?? []).map(async d => {
+    const { data, error } = await supabase.rpc('wallet_summary', { p_driver: d.id });
+    return error ? null : (((data ?? []) as { balance: number }[])[0]?.balance ?? 0);
+  }));
 
   return (
     <div className="max-w-6xl space-y-8">
@@ -56,11 +52,11 @@ export default async function DriversPage({ searchParams }: { searchParams: Prom
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b text-left text-slate-600">
-              <th className="py-2">이름</th><th>아이디·전화</th><th>상태</th><th>서류</th><th>반납</th>{isAdmin && <th>수수료율</th>}
+              <th className="py-2">이름</th><th>아이디·전화</th><th>상태</th><th className="pr-4 text-right">충전금</th><th>반납</th>{isAdmin && <th>수수료율</th>}
             </tr>
           </thead>
           <tbody>
-            {(drivers.data ?? []).map(d => (
+            {(drivers.data ?? []).map((d, i) => (
               <tr key={d.id} className="border-b align-top">
                 <td className="py-2 font-semibold">{d.name}</td>
                 <td><div className="text-slate-500">{d.login_id}</div><div>{d.phone}</div></td>
@@ -79,13 +75,10 @@ export default async function DriversPage({ searchParams }: { searchParams: Prom
                     )}
                   </div>}
                 </td>
-                <td>
-                  {(docsOf.get(d.id) ?? []).map(doc => (
-                    <a key={doc.kind} href={doc.url} target="_blank" rel="noreferrer" className="mr-2 text-road underline">
-                      {DOC_LABEL[doc.kind] ?? doc.kind}
-                    </a>
-                  ))}
-                  {!docsOf.has(d.id) && <span className="text-slate-400">없음</span>}
+                <td className={`pr-4 text-right font-semibold ${(balances[i] ?? 0) < 0 ? 'text-red-600' : ''}`}>
+                  {balances[i] === null ? '—' : isAdmin
+                    ? <Link href={`/admin/wallets/${d.id}`} className="hover:underline">{won(balances[i]!)}</Link>
+                    : won(balances[i]!)}
                 </td>
                 <td>{releaseCount.get(d.id) ?? 0}회</td>
                 {isAdmin && <td>

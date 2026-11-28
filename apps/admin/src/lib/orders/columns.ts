@@ -15,3 +15,26 @@ export function restoreOrder(saved: unknown, ids: string[]): string[] {
   const kept = saved.filter((c): c is string => typeof c === 'string' && ids.includes(c));
   return [...new Set(kept), ...ids.filter(c => !kept.includes(c))];
 }
+
+export type SortDir = 'asc' | 'desc';
+export type Sort = { col: string; dir: SortDir } | null;
+
+/** 칸 제목을 누를 때: 같은 칸이면 오름↔내림, 다른 칸이면 오름부터 */
+export function nextSort(cur: Sort, col: string): Sort {
+  return { col, dir: cur?.col === col && cur.dir === 'asc' ? 'desc' : 'asc' };
+}
+
+/** 글자는 가나다순(숫자 섞여도 자연스럽게), 숫자는 크기순. 빈 값은 어느 방향이든 맨 뒤 */
+export function sortRows<T>(rows: T[], key: (r: T) => string | number | null, dir: SortDir): T[] {
+  const sign = dir === 'asc' ? 1 : -1;
+  const empty = (v: unknown) => v === null || v === '';
+  return [...rows].sort((a, b) => {
+    const x = key(a), y = key(b);
+    if (empty(x) || empty(y)) return Number(empty(x)) - Number(empty(y));
+    const c = typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y), 'ko', { numeric: true });
+    return c * sign;
+  });
+}
+
+/** 칸 너비(px): 너무 좁거나 넓지 않게 */
+export const clampWidth = (w: number) => Math.min(600, Math.max(48, Math.round(w)));

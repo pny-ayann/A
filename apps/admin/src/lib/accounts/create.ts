@@ -3,7 +3,7 @@ import { errorMessage, loginIdToEmail } from '@takson/shared';
 export type NewAccount = { loginId: string; password: string; name: string; phone: string } & (
   | { role: 'customer'; companyId: string }
   | { role: 'driver' }
-  | { role: 'staff'; staffLevel: 'admin' | 'operator' }
+  | { role: 'staff'; staffLevel: 'admin' | 'operator' | 'accounting' }
 );
 
 /** createAccount가 쓰는 서비스 키 클라이언트의 일부 (테스트에서 가짜로 바꿀 수 있게) */

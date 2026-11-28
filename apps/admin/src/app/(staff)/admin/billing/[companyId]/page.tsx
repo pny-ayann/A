@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { kstDate, monthRange, parseMonth } from '@/lib/billing/month';
 import type { BillingLine } from '@/lib/billing/excel';
 import { won } from '@/lib/wallet/format';
+import { canSettle } from '@/lib/auth/gate';
 import { getStaffProfile, serverClient } from '@/lib/supabase/server';
 import { PaidCheckbox } from '../PaidCheckbox';
 import { PayStatus } from '../PayStatus';
@@ -14,7 +15,7 @@ export default async function CompanyBillingPage({ params, searchParams }: {
   params: Promise<{ companyId: string }>; searchParams: Promise<{ month?: string }>;
 }) {
   const me = await getStaffProfile();
-  if (me?.staff_level !== 'admin') redirect('/orders');
+  if (!canSettle(me?.staff_level)) redirect('/orders');
   const { companyId } = await params;
   const month = parseMonth((await searchParams).month, new Date());
   const supabase = await serverClient();

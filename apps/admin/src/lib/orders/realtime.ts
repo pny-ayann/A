@@ -58,7 +58,16 @@ export type OrderFilter = {
   /** YYYY-MM-DD (한국 시간). 접수일이나 예약일이 이 날인 오더 */
   date?: string;
   reservedOnly?: boolean;
+  /** 결제 방식 (비어 있으면 전부) */
+  payments?: OrderRow['payment_method'][];
+  /** 검색어: 띄어쓰기로 나눈 낱말이 모두 들어 있는 오더 (번호·주소·동네·차량번호·업체·기사) */
+  q?: string;
+  /** 검색에 함께 쓸 이름들 (업체·기사 이름) */
+  nameOf?: (o: OrderRow) => string;
 };
+
+// 띄어쓰기를 무시하고 비교 ('12가 3456' = '12가3456')
+const squash = (t: string) => t.replace(/\s+/g, '').toLowerCase();
 
 /** 한국 시간 기준 날짜 YYYY-MM-DD */
 export function kstDate(iso: string): string {
@@ -66,11 +75,16 @@ export function kstDate(iso: string): string {
 }
 
 export function filterOrders(list: OrderRow[], f: OrderFilter): OrderRow[] {
+  const words = (f.q ?? '').split(/\s+/).filter(Boolean).map(squash);
+  const text = (o: OrderRow) => squash([o.order_no, o.pickup_address, o.pickup_area, o.dropoff_address, o.dropoff_area,
+    o.vehicle_number, f.nameOf?.(o)].filter(Boolean).join('|'));
   return list.filter(o =>
-    (!f.status?.length || f.status.includes(o.status))
+    (!words.length || words.every(w => text(o).includes(w)))
+    && (!f.status?.length || f.status.includes(o.status))
     && (!f.companyId || o.company_id === f.companyId)
     && (!f.driverId || o.driver_id === f.driverId)
     && (!f.reservedOnly || o.reserved_at !== null)
+    && (!f.payments?.length || f.payments.includes(o.payment_method))
     && (!f.date || kstDate(o.reserved_at ?? o.created_at) === f.date));
 }
 

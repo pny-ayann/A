@@ -1,8 +1,7 @@
 'use server';
 import { errorMessage, type OrderStatus } from '@takson/shared';
 import { revalidatePath } from 'next/cache';
-import type { OrderForm } from '@/lib/orders/form';
-import { changedColumns, CONFLICT_LABEL, validateOrderEdit } from '@/lib/orders/actions';
+import { changedColumns, changedExtras, CONFLICT_LABEL, validateOrderEdit, type EditForm } from '@/lib/orders/actions';
 import { getStaffProfile, serverClient } from '@/lib/supabase/server';
 
 export type Result = { ok: boolean; message: string };
@@ -29,18 +28,31 @@ function done(orderId: string, message: string): Result {
  * 상태·기사 말고 모든 항목 저장 (일반 update. 이력·감사 기록은 서버 트리거가 남긴다).
  * 바꾼 칸만 보내고, 화면을 연 뒤 다른 사람이 오더를 바꿨으면(updated_at이 다르면) 저장하지 않는다.
  */
-export async function saveOrder(orderId: string, initial: OrderForm, form: OrderForm, loadedUpdatedAt: string): Promise<Result & { updatedAt?: string }> {
+export async function saveOrder(orderId: string, initial: EditForm, form: EditForm, loadedUpdatedAt: string): Promise<Result & { updatedAt?: string }> {
   const supabase = await staff();
   if (!supabase) return LOGIN_NEEDED;
-  const problem = validateOrderEdit(form, initial.reservedAt, new Date());
+  const problem = validateOrderEdit(form);
   if (problem) return { ok: false, message: problem };
   const changes = changedColumns(initial, form);
-  if (Object.keys(changes).length === 0) return { ok: false, message: '바뀐 내용이 없어요.' };
-  const { data, error } = await supabase.from('orders').update(changes)
-    .eq('id', orderId).eq('updated_at', loadedUpdatedAt).select('updated_at');
-  if (error) return { ok: false, message: errorMessage(error.message) };
-  if (!data?.length) return { ok: false, message: '화면을 연 뒤 다른 사람이 이 오더를 바꿨어요. 새로고침해서 최신 내용을 보고 다시 고쳐 주세요.' };
-  return { ...done(orderId, '저장했어요.'), updatedAt: data[0]!.updated_at as string };
+  const extras = changedExtras(initial, form);
+  const hasColumns = Object.keys(changes).length > 0;
+  if (!hasColumns && !extras.waypoints && !extras.missionIds) return { ok: false, message: '바뀐 내용이 없어요.' };
+  let updatedAt = loadedUpdatedAt;
+  if (hasColumns) {
+    const { data, error } = await supabase.from('orders').update(changes)
+      .eq('id', orderId).eq('updated_at', loadedUpdatedAt).select('updated_at');
+    if (error) return { ok: false, message: errorMessage(error.message) };
+    if (!data?.length) return { ok: false, message: '화면을 연 뒤 다른 사람이 이 오더를 바꿨어요. 새로고침해서 최신 내용을 보고 다시 고쳐 주세요.' };
+    updatedAt = data[0]!.updated_at as string;
+  }
+  if (extras.waypoints || extras.missionIds) {
+    // 경유지·미션은 서버 함수 하나로 한꺼번에 바꾼다 (중간에 실패하면 아무것도 안 바뀜)
+    const { error } = await supabase.rpc('staff_set_order_extras', {
+      p_order_id: orderId, p_waypoints: extras.waypoints, p_mission_ids: extras.missionIds,
+    });
+    if (error) return { ok: false, message: `경유지·미션을 저장하지 못했어요. ${errorMessage(error.message)}` };
+  }
+  return { ...done(orderId, '저장했어요.'), updatedAt };
 }
 
 export async function loadCandidates(orderId: string): Promise<{ ok: true; list: Candidate[] } | { ok: false; message: string }> {

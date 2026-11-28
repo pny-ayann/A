@@ -20,7 +20,7 @@ export async function serverClient() {
   });
 }
 
-export type StaffProfile = { id: string; name: string; staff_level: 'admin' | 'operator' };
+export type StaffProfile = { id: string; name: string; staff_level: 'admin' | 'operator' | 'accounting' };
 
 /** 로그인한 직원 정보. 직원이 아니면 null */
 export async function getStaffProfile(): Promise<StaffProfile | null> {

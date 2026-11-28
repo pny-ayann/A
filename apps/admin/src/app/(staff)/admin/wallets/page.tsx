@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { ActionForm, inputCls } from '@/components/ActionForm';
 import { startSettlement } from '@/lib/wallet/actions';
 import { kst, won } from '@/lib/wallet/format';
+import { canSettle } from '@/lib/auth/gate';
 import { getStaffProfile, serverClient } from '@/lib/supabase/server';
 
 type Driver = { id: string; name: string | null; login_id: string; driver_status: string };
@@ -11,7 +12,7 @@ type Summary = { balance: number; withdrawable: number; pending: number };
 /** 기사별 충전금 (관리자). 정산이 꺼져 있으면 시작 잔액을 넣고 정산을 시작한다. */
 export default async function WalletsPage() {
   const me = await getStaffProfile();
-  if (me?.staff_level !== 'admin') redirect('/orders');
+  if (!canSettle(me?.staff_level)) redirect('/orders');
   const supabase = await serverClient();
   const [drivers, settings] = await Promise.all([
     supabase.from('profiles').select('id, name, login_id, driver_status').eq('role', 'driver').neq('driver_status', 'pending').order('name'),

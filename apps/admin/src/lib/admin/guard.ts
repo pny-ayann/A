@@ -1,4 +1,5 @@
 import 'server-only';
+import { canSettle } from '@/lib/auth/gate';
 import { getStaffProfile, serverClient } from '@/lib/supabase/server';
 
 export type ActionResult = { ok: boolean; message: string } | null;
@@ -7,6 +8,13 @@ export type ActionResult = { ok: boolean; message: string } | null;
 export async function requireAdmin() {
   const me = await getStaffProfile();
   if (!me || me.staff_level !== 'admin') return null;
+  return { me, supabase: await serverClient() };
+}
+
+/** 관리자 또는 '정산' 등급 (충전금·출금·업체 정산·업체·기사 관리) */
+export async function requireSettle() {
+  const me = await getStaffProfile();
+  if (!me || !canSettle(me.staff_level)) return null;
   return { me, supabase: await serverClient() };
 }
 
