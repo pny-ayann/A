@@ -5,6 +5,7 @@ const messages: Record<string, string> = {
   HAS_ACTIVE_ORDER: '진행 중인 일반 오더를 먼저 끝내 주세요.',
   RESERVATION_CONFLICT: '다른 예약과 시간이 너무 가까워요.',
   RELEASE_WINDOW_PASSED: '반납 가능 시간이 지났어요. 관제에 문의해 주세요.',
+  ACCEPTED_NO_RELEASE: '오더수락 뒤에는 취소할 수 없어요. 관제에 문의해 주세요.',
   PHOTOS_REQUIRED: '필수 사진을 모두 올려 주세요.',
   CAPITAL_REQUIRED: '캐피탈 회사를 골라 주세요.',
   DOCS_STAFF_ONLY: '서류탁송은 관제에서만 접수할 수 있어요.',

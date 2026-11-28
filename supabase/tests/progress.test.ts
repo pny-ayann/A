@@ -26,6 +26,12 @@ describe('반납', () => {
     expect(await status(o)).toBe('open');
   });
 
+  test('오더수락(수락함) 뒤에는 시간 안이어도 기사가 반납할 수 없다', async () => {
+    const o = await held({ status: 'arrived_pickup' }, 1);
+    await expectError(release(w.d, o), 'ACCEPTED_NO_RELEASE');
+    expect(await status(o)).toBe('arrived_pickup');
+  });
+
   test('사유 없이도 반납된다', async () => {
     const o = await held({}, 1);
     await as(w.db, w.d, tx => tx.query('select release_order($1, null)', [o]));

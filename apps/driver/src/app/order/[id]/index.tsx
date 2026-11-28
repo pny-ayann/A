@@ -51,7 +51,7 @@ export default function OrderDetail() {
   // 이 오더의 모든 대기(칸·추가 사진, 영수증): 남은 채로 상태가 넘어가면 서버가 받지 않는다
   const pendingUploads = photoPhase ? queue.pending(id) : 0;
   const action = nextAction(order.status, missing, pendingUploads, order.status === 'arrived_pickup' ? docs?.state ?? null : null);
-  const canRelease = order.assigned_at && (order.status === 'assigned' || order.status === 'arrived_pickup');
+  const canRelease = order.assigned_at && order.status === 'assigned'; // 오더수락 뒤에는 기사가 취소 못 함 (관제만)
   const releaseLeft = canRelease ? releaseRemainingMs(order.assigned_at!, order.kind, settings, now) : 0;
   const mmss = `${Math.floor(releaseLeft / 60000)}:${String(Math.floor(releaseLeft / 1000) % 60).padStart(2, '0')}`;
   const done = order.status === 'completed';
