@@ -28,12 +28,12 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     supabase.from('order_missions').select('extra_fare, missions(name)').eq('order_id', id),
     supabase.from('order_events').select('id, type, from_status, to_status, reason, data, actor_id, created_at')
       .eq('order_id', id).order('created_at'),
-    supabase.from('order_photos').select('id, phase, slot, path, taken_at, rejected_reason').eq('order_id', id).order('created_at'),
+    supabase.from('order_photos').select('id, phase, slot, path, taken_at, rejected_reason, source').eq('order_id', id).order('created_at'),
     supabase.from('fuel_receipts').select('id, amount, path, created_at').eq('order_id', id).order('created_at'),
     supabase.rpc('missing_photos', { p_order_id: id, p_phase: 'pickup' }),
     supabase.rpc('missing_photos', { p_order_id: id, p_phase: 'dropoff' }),
     supabase.from('capital_companies').select('id, name').order('sort').order('name'),
-    supabase.from('order_documents').select('id, slot, path, status, reason, taken_at').eq('order_id', id),
+    supabase.from('order_documents').select('id, slot, path, status, reason, taken_at, source').eq('order_id', id),
     supabase.from('capital_examples').select('id, title').eq('company_id', order.capital_company_id ?? '00000000-0000-0000-0000-000000000000'),
     supabase.rpc('required_doc_slots', { p_order_id: id }),
   ]);
@@ -56,7 +56,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   }
   const photoUrls = await sign('order-photos', (photos.data ?? []).map(p => p.path));
   const receiptUrls = await sign('receipts', (receipts.data ?? []).map(r => r.path));
-  const signedPhotos: SignedPhoto[] = (photos.data ?? []).map(p => ({ id: p.id, phase: p.phase, slot: p.slot, taken_at: p.taken_at, rejected_reason: p.rejected_reason, url: photoUrls.get(p.path) ?? null }));
+  const signedPhotos: SignedPhoto[] = (photos.data ?? []).map(p => ({ id: p.id, phase: p.phase, slot: p.slot, taken_at: p.taken_at, rejected_reason: p.rejected_reason, fromGallery: p.source === 'gallery', url: photoUrls.get(p.path) ?? null }));
   // 서류 칸: 필요한 칸 순서대로, 지운 양식에 이미 올라온 서류는 뒤에 붙인다
   const docUrls = await sign('order-photos', (docs.data ?? []).map(d => d.path));
   const exList = examples.data ?? [];
@@ -64,7 +64,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const reviewDocs: ReviewDoc[] = docSlots.map(slot => {
     const d = (docs.data ?? []).find(x => x.slot === slot);
     return { id: d?.id ?? null, slot, label: docSlotLabel(slot, exList), url: d ? docUrls.get(d.path) ?? null : null,
-      status: (d?.status as ReviewDoc['status']) ?? null, reason: d?.reason ?? null, takenAt: d?.taken_at ?? null };
+      status: (d?.status as ReviewDoc['status']) ?? null, reason: d?.reason ?? null, takenAt: d?.taken_at ?? null, fromGallery: d?.source === 'gallery' };
   });
   const capitalName = (capitals.data ?? []).find(c => c.id === order.capital_company_id)?.name ?? null;
   const signedReceipts: SignedReceipt[] = (receipts.data ?? []).map(r => ({ id: r.id, amount: r.amount, created_at: r.created_at, url: receiptUrls.get(r.path) ?? null }));

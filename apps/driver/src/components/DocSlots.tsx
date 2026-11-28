@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { DocInfo } from '@/lib/orders/useOrder';
 import { usePhotoQueue } from '@/lib/photos/PhotoQueueProvider';
+import { lostReasons } from '@/lib/photos/queue';
 import { supabase } from '@/lib/supabase';
 import { BigButton, color, Notice } from '@/ui/kit';
 
@@ -21,7 +22,8 @@ export function docLabel(slot: string, examples: { id: string; title: string }[]
 export function DocSlots({ orderId, docs, sealCount, capitalId, reload }: {
   orderId: string; docs: DocInfo; sealCount: number | null; capitalId: string | null; reload: () => Promise<void>;
 }) {
-  const { items } = usePhotoQueue();
+  const { items, lost } = usePhotoQueue();
+  const lostDocs = lostReasons(lost, orderId, 'docs', docs.state.missing);
   const [count, setCount] = useState(sealCount ? String(sealCount) : '');
   const [msg, setMsg] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -31,6 +33,7 @@ export function DocSlots({ orderId, docs, sealCount, capitalId, reload }: {
     if (queued(s)) return { key: 'queued' as const, text: '올리는 중' };
     const r = docs.state.rejected.find(x => x.slot === s);
     if (r) return { key: 'rejected' as const, text: `✗ 불인정 · ${r.reason}` };
+    if (lostDocs[s]) return { key: 'rejected' as const, text: '✗ 다시 찍기 · 파일 없음' };
     if (docs.state.missing.includes(s)) return { key: 'empty' as const, text: '찍기' };
     if (docs.state.pending.includes(s)) return { key: 'pending' as const, text: '관제 확인 중' };
     return { key: 'ok' as const, text: '✓ 인정' };

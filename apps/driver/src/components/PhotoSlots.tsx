@@ -1,7 +1,7 @@
 import { router, type Href } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { usePhotoQueue } from '@/lib/photos/PhotoQueueProvider';
-import type { Slot } from '@/lib/photos/queue';
+import { lostReasons, type Slot } from '@/lib/photos/queue';
 import { photoSlotState } from '@/lib/photos/slotState';
 import { BigButton, color } from '@/ui/kit';
 
@@ -17,9 +17,11 @@ export function PhotoSlots({ orderId, phase, missing, rejected = {} }: {
   /** 관제가 불인정한 칸 → 이유 */
   rejected?: Record<string, string>;
 }) {
-  const { items } = usePhotoQueue();
+  const { items, lost } = usePhotoQueue();
   const queued = (s: Slot) => items.some(i => i.orderId === orderId && i.phase === phase && i.slot === s);
-  const state = (s: Slot) => photoSlotState(s, missing, queued(s), rejected);
+  // 휴대폰에서 파일을 잃은 칸도 빨간 칸(다시 찍기)으로
+  const bad = { ...lostReasons(lost, orderId, phase, missing), ...rejected };
+  const state = (s: Slot) => photoSlotState(s, missing, queued(s), bad);
   const todo = SLOTS.filter(s => ['empty', 'rejected'].includes(state(s).key));
   const pendingAll = items.filter(i => i.orderId === orderId).length;
 

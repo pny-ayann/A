@@ -3,7 +3,12 @@ import { PhotoReject } from './PhotoReject';
 
 export type SignedPhoto = {
   id: string; phase: string; slot: string | null; url: string | null; taken_at: string | null; rejected_reason: string | null;
+  /** 휴대폰 갤러리에서 고른 사진 (찍은 시각·위치를 믿을 수 없음) */
+  fromGallery: boolean;
 };
+
+const GalleryTag = () =>
+  <span className="rounded bg-violet-100 px-1 text-xs text-violet-800" title="휴대폰 갤러리에서 고른 사진이에요">갤러리</span>;
 export type SignedReceipt = { id: string; amount: number; url: string | null; created_at: string };
 
 const kst = (iso: string) => new Intl.DateTimeFormat('ko-KR', {
@@ -42,7 +47,7 @@ export function PhotoGrid({ orderId, photos, receipts, rejectable }: {
               return (
                 <figure key={slot}>
                   <Thumb url={p?.url ?? null} label={SLOT_LABEL[slot]} />
-                  <figcaption className="text-center text-xs text-slate-500">{SLOT_LABEL[slot]}</figcaption>
+                  <figcaption className="text-center text-xs text-slate-500">{SLOT_LABEL[slot]} {p?.fromGallery && <GalleryTag />}</figcaption>
                   {p?.rejected_reason && <p className="text-center text-xs text-red-700">✗ 불인정: {p.rejected_reason}</p>}
                   {p && !p.rejected_reason && rejectable === phase && <PhotoReject orderId={orderId} photoId={p.id} />}
                 </figure>
@@ -56,7 +61,12 @@ export function PhotoGrid({ orderId, photos, receipts, rejectable }: {
         <div>
           <h3 className="mb-1 text-sm font-semibold">추가 사진 {extras.length}장</h3>
           <div className="grid grid-cols-6 gap-2">
-            {extras.map((p, i) => <Thumb key={i} url={p.url} label={`추가 ${i + 1}`} />)}
+            {extras.map((p, i) => (
+              <figure key={i}>
+                <Thumb url={p.url} label={`추가 ${i + 1}`} />
+                {p.fromGallery && <figcaption className="text-center"><GalleryTag /></figcaption>}
+              </figure>
+            ))}
           </div>
         </div>
       )}

@@ -19,6 +19,8 @@ export type QueueItem = {
   amount: number | null;
   attempts: number;
   nextTryAt: number;
+  /** 갤러리에서 고른 사진 (없으면 앱 카메라) */
+  source?: 'camera' | 'gallery';
 };
 
 /** 서버 저장소 경로 규칙 (supabase/migrations/20261116000007_storage.sql 맨 위 주석) */
@@ -78,4 +80,17 @@ export function classifyError(e: { message?: string; statusCode?: string | numbe
  */
 export function resolveDrop(s: { hasSession: boolean; stillMine: boolean }): 'retry' | 'drop' {
   return s.hasSession && !s.stillMine ? 'drop' : 'retry';
+}
+
+/** 대기열에 아직 있나 — 올리는 도중 같은 칸을 다시 찍으면 옛것은 빠지고 파일도 지워진다 */
+export const stillQueued = (q: QueueItem[], id: string) => q.some(i => i.id === id);
+
+/** 휴대폰에서 파일을 잃어 못 올린 칸 */
+export type Lost = { orderId: string; phase: Phase | null; slot: string };
+
+/** 이 오더·단계에서 파일을 잃었고 아직 서버에도 없는 칸 → 빨간 칸 이유 */
+export function lostReasons(lost: Lost[], orderId: string, phase: Phase, missing: string[]): Record<string, string> {
+  return Object.fromEntries(lost
+    .filter(l => l.orderId === orderId && l.phase === phase && missing.includes(l.slot))
+    .map(l => [l.slot, '파일 없음']));
 }
