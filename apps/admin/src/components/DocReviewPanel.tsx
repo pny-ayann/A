@@ -9,6 +9,8 @@ export type ReviewDoc = {
   status: 'pending' | 'approved' | 'rejected' | null; reason: string | null;
   /** 화면에 보인 서류를 찍은 시각 (인정·불인정 때 함께 보내 바뀐 서류를 거절) */
   takenAt: string | null;
+  /** 휴대폰 갤러리에서 고른 사진 */
+  fromGallery: boolean;
 };
 
 const BADGE = {
@@ -49,6 +51,7 @@ export function DocReviewPanel({ orderId, capitalName, sealCount, docs }: {
             <figcaption className="text-xs">
               <div className="font-medium">{d.label}</div>
               {d.status && <span className={`rounded px-1 ${BADGE[d.status]}`}>{STATUS_TEXT[d.status]}</span>}
+              {d.fromGallery && <span className="ml-1 rounded bg-violet-100 px-1 text-violet-800" title="휴대폰 갤러리에서 고른 사진이에요">갤러리</span>}
               {d.status === 'rejected' && d.reason && <div className="text-red-700">{d.reason}</div>}
             </figcaption>
             {d.id && d.status !== 'approved' && (

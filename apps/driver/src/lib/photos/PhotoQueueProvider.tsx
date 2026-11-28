@@ -7,13 +7,13 @@ import { AppState, Platform } from 'react-native';
 import { currentPosition } from '../location/current';
 import { compressPhoto } from './image';
 import { supabase } from '../supabase';
-import { applyResult, due, enqueue, pendingCount, resolveDrop, retryNow, type Phase, type QueueItem } from './queue';
+import { applyResult, due, enqueue, pendingCount, resolveDrop, retryNow, stillQueued, type Lost, type Phase, type QueueItem } from './queue';
 import { deleteLocal, uploadOne } from './uploader';
 
 const KEY = 'photo-queue-v1';
 
 export type Shot = { uri: string; width: number; height: number };
-type Add = { kind: 'photo'; orderId: string; phase: Phase; slot: string | null } | { kind: 'receipt'; orderId: string; amount: number };
+type Add = { kind: 'photo'; orderId: string; phase: Phase; slot: string | null; fromGallery?: boolean } | { kind: 'receipt'; orderId: string; amount: number };
 
 type Ctx = {
   items: QueueItem[];
@@ -24,9 +24,14 @@ type Ctx = {
   /** 회수·취소로 포기한 사진이 있으면 안내 문구 */
   dropNotice: string | null;
   clearDropNotice: () => void;
+  /** 휴대폰에서 파일을 잃어 못 올린 칸 (빨간 칸으로 표시) */
+  lost: Lost[];
 };
 
 const PhotoQueueCtx = createContext<Ctx | null>(null);
+
+const sameLost = (l: Lost, i: { orderId: string; phase: Phase | null; slot: string | null }) =>
+  l.orderId === i.orderId && l.phase === i.phase && l.slot === i.slot;
 
 /**
  * 서버가 거부했을 때 정말 버릴지 확인: 로그인돼 있고 오더가 더는 내 것이 아닐 때만 버린다.
@@ -55,6 +60,7 @@ export function PhotoQueueProvider({ children }: { children: ReactNode }) {
   const [loaded, setLoaded] = useState(false);
   const [uploadedTick, setUploadedTick] = useState(0);
   const [dropNotice, setDropNotice] = useState<string | null>(null);
+  const [lost, setLost] = useState<Lost[]>([]);
   const ref = useRef<QueueItem[]>([]);
   const running = useRef(false);
 
@@ -72,9 +78,15 @@ export function PhotoQueueProvider({ children }: { children: ReactNode }) {
     running.current = true;
     try {
       for (const i of due(ref.current, Date.now())) {
+        // 올리는 도중 같은 칸을 다시 찍었으면 옛것은 이미 빠졌고 파일도 지워졌다 — 건너뛴다
+        if (!stillQueued(ref.current, i.id)) continue;
         const first = await uploadOne(i);
         if (first === 'gone') {
-          setDropNotice('휴대폰에서 사진 파일을 찾지 못해 올리지 못한 사진이 있어요. 다시 찍어 주세요.');
+          const slot = i.slot;
+          if (slot) setLost(l => [...l.filter(x => !sameLost(x, i)), { orderId: i.orderId, phase: i.phase, slot }]);
+          setDropNotice(slot
+            ? '휴대폰에서 사진 파일을 찾지 못한 칸이 있어요. 빨간 칸을 다시 찍어 주세요.'
+            : '휴대폰에서 사진 파일을 찾지 못해 올리지 못한 추가 사진이 있어요. 다시 찍어 주세요.');
           save(applyResult(ref.current, i.id, 'drop', Date.now()));
           continue;
         }
@@ -130,7 +142,9 @@ export function PhotoQueueProvider({ children }: { children: ReactNode }) {
   const add = useCallback(async (shot: Shot, what: Add) => {
     const id = randomUUID();
     // 위치는 압축과 동시에, 길어야 2초만 (지하에서 한 장마다 10초씩 기다리지 않게)
-    const posP = currentPosition(2_000);
+    const fromGallery = what.kind === 'photo' && !!what.fromGallery;
+    // 갤러리 사진은 지금 위치가 찍은 곳이 아니니 위치를 붙이지 않는다
+    const posP = fromGallery ? Promise.resolve(null) : currentPosition(2_000);
     const small = await compressPhoto(shot.uri, shot.width, shot.height);
     const pos = await posP;
     // 파일을 옮긴 바로 뒤에 대기열에 저장해, 그 사이 앱이 꺼져 사진이 길을 잃지 않게 한다
@@ -141,12 +155,13 @@ export function PhotoQueueProvider({ children }: { children: ReactNode }) {
       slot: what.kind === 'photo' ? what.slot : null,
       amount: what.kind === 'receipt' ? what.amount : null,
       localUri, takenAt: new Date().toISOString(), lat: pos?.lat ?? null, lng: pos?.lng ?? null,
-      attempts: 0, nextTryAt: 0,
+      attempts: 0, nextTryAt: 0, source: fromGallery ? 'gallery' : 'camera',
     };
     // 같은 칸을 다시 찍었으면 예전 파일은 지운다
     const replaced = ref.current.find(x => x.kind === 'photo' && x.slot && x.slot === item.slot && x.orderId === item.orderId && x.phase === item.phase);
     if (replaced) deleteLocal(replaced.localUri);
     save(enqueue(ref.current, item));
+    setLost(l => l.filter(x => !sameLost(x, item))); // 다시 찍었으니 빨간 칸 해제
     void run();
   }, [run, save]);
 
@@ -157,6 +172,7 @@ export function PhotoQueueProvider({ children }: { children: ReactNode }) {
     uploadedTick,
     dropNotice,
     clearDropNotice: () => setDropNotice(null),
+    lost,
   };
   return <PhotoQueueCtx.Provider value={value}>{children}</PhotoQueueCtx.Provider>;
 }

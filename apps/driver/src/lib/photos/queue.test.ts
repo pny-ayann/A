@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { applyResult, backoffMs, classifyError, resolveDrop, due, enqueue, pendingCount, retryNow, storagePath, type QueueItem } from './queue';
+import { applyResult, backoffMs, lostReasons, stillQueued, classifyError, resolveDrop, due, enqueue, pendingCount, retryNow, storagePath, type QueueItem } from './queue';
 
 const item = (p: Partial<QueueItem>): QueueItem => ({
   id: 'I1', kind: 'photo', orderId: 'O1', phase: 'pickup', slot: 'front', localUri: 'file:///q/I1.jpg',
@@ -90,4 +90,21 @@ test('서류는 docs 폴더 경로', () => {
 test('같은 서류 칸을 다시 찍으면 바꿔 끼운다', () => {
   const q = enqueue([item({ id: 'a', phase: 'docs', slot: 'seal' })], item({ id: 'b', phase: 'docs', slot: 'seal' }));
   expect(q.map(x => x.id)).toEqual(['b']);
+});
+
+test('올리는 도중 같은 칸을 다시 찍어 바뀐 사진은 더 올리지 않는다 (지운 파일이라 "파일 없음"이 잘못 뜸)', () => {
+  const old = item({ id: 'OLD' });
+  const q = enqueue([old], item({ id: 'NEW' }));
+  expect(stillQueued(q, 'OLD')).toBe(false);
+  expect(stillQueued(q, 'NEW')).toBe(true);
+});
+
+test('파일을 잃은 칸: 이 오더·단계에서 아직 서버에 없는 칸만 "파일 없음"', () => {
+  const lost = [
+    { orderId: 'O1', phase: 'pickup' as const, slot: 'left' },
+    { orderId: 'O1', phase: 'pickup' as const, slot: 'back' },
+    { orderId: 'O1', phase: 'dropoff' as const, slot: 'front' },
+    { orderId: 'O2', phase: 'pickup' as const, slot: 'right' },
+  ];
+  expect(lostReasons(lost, 'O1', 'pickup', ['left', 'right'])).toEqual({ left: '파일 없음' });
 });

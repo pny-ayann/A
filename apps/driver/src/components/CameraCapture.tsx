@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton, Body, color } from '@/ui/kit';
 
 /**
- * 앱 안 카메라로만 찍는 전체 화면 촬영기. 갤러리에서 고르는 길은 없다 (설계 6.3).
+ * 앱 안 카메라로 찍는 전체 화면 촬영기. onGallery를 주면 갤러리에서 고르는 버튼도 보인다 (갤러리 사진은 관제에 표시됨).
  * onShot에는 찍은 원본(임시 파일)의 주소와 크기가 온다.
  */
 /** frame: 화면에 맞춤 테두리 (차량 = 가로 넓게, 서류 = A4 세로) */
@@ -14,11 +14,13 @@ const FRAME = {
   doc: { box: { width: '80%', aspectRatio: 0.707 }, hint: '서류 네 모서리가 테두리 안에 들어오게 찍어 주세요' },
 } as const;
 
-export function CameraCapture({ label, onShot, onCancel, frame }: {
+export function CameraCapture({ label, onShot, onCancel, frame, onGallery }: {
   label: string;
   onShot: (uri: string, size: { width: number; height: number }) => void | Promise<void>;
   onCancel: () => void;
   frame?: 'car' | 'doc';
+  /** 휴대폰 갤러리에서 고르기 (없으면 버튼 숨김) */
+  onGallery?: () => void;
 }) {
   const [permission, requestPermission] = useCameraPermissions();
   const cam = useRef<CameraView>(null);
@@ -33,6 +35,7 @@ export function CameraCapture({ label, onShot, onCancel, frame }: {
         {permission.canAskAgain
           ? <BigButton label="카메라 허용" onPress={requestPermission} />
           : <BigButton label="설정 열기" onPress={() => void Linking.openSettings()} />}
+        {onGallery && <BigButton label="갤러리에서 고르기" tone="plain" onPress={onGallery} />}
         <BigButton label="취소" tone="plain" onPress={onCancel} />
       </SafeAreaView>
     );
@@ -64,6 +67,7 @@ export function CameraCapture({ label, onShot, onCancel, frame }: {
         </View>
         <View style={{ gap: 10 }}>
           <BigButton label="찍기" onPress={shoot} disabled={!ready} busy={busy} />
+          {onGallery && <BigButton label="갤러리에서 고르기" tone="plain" onPress={onGallery} disabled={busy} />}
           <BigButton label="취소" tone="plain" onPress={onCancel} />
         </View>
       </SafeAreaView>

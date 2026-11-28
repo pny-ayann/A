@@ -32,19 +32,21 @@ export async function uploadOne(i: QueueItem): Promise<'ok' | 'retry' | 'gone' |
   if (up.error && !isDuplicate(up.error as Err)) return classifyError(up.error as Err) === 'drop' ? 'denied' : 'retry';
 
   let rowErr: Err = null;
+  // 다시 찍으면 같은 줄을 덮어쓰니 카메라도 꼭 적는다 (예전 갤러리 표시가 남지 않게)
+  const source = i.source ?? 'camera';
   if (i.kind === 'receipt') {
     ({ error: rowErr } = await supabase.from('fuel_receipts').insert({ id: i.id, order_id: i.orderId, amount: i.amount, path }));
   } else if (i.phase === 'docs' && i.slot) {
     // 서류 칸: 다시 찍으면 같은 줄을 덮어쓰고, 서버가 '관제 확인 중'으로 되돌린다
     ({ error: rowErr } = await supabase.from('order_documents').upsert(
-      { order_id: i.orderId, slot: i.slot, path, taken_at: i.takenAt }, { onConflict: 'order_id,slot' }));
+      { order_id: i.orderId, slot: i.slot, path, taken_at: i.takenAt, source }, { onConflict: 'order_id,slot' }));
   } else if (i.slot) {
     ({ error: rowErr } = await supabase.from('order_photos').upsert(
-      { order_id: i.orderId, phase: i.phase, slot: i.slot, path, taken_at: i.takenAt, lat: i.lat, lng: i.lng },
+      { order_id: i.orderId, phase: i.phase, slot: i.slot, path, taken_at: i.takenAt, lat: i.lat, lng: i.lng, source },
       { onConflict: 'order_id,phase,slot' }));
   } else {
     ({ error: rowErr } = await supabase.from('order_photos').insert(
-      { id: i.id, order_id: i.orderId, phase: i.phase, slot: null, path, taken_at: i.takenAt, lat: i.lat, lng: i.lng }));
+      { id: i.id, order_id: i.orderId, phase: i.phase, slot: null, path, taken_at: i.takenAt, lat: i.lat, lng: i.lng, source }));
   }
   if (rowErr && !isDuplicate(rowErr)) return classifyError(rowErr) === 'drop' ? 'denied' : 'retry';
   return 'ok';

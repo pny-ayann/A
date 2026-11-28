@@ -1,7 +1,7 @@
 import { errorMessage } from '@takson/shared';
 import { router, useFocusEffect, type Href } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { DeviceEventEmitter, FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, DeviceEventEmitter, FlatList, Platform, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { OrderCard } from '@/components/OrderCard';
 import { currentPosition, type LatLng } from '@/lib/location/current';
@@ -54,6 +54,8 @@ export default function OpenOrders() {
     setGrabbing(null);
     if (error) {
       setMessage(errorMessage(error.message));
+      // 목록 위 안내는 스크롤하면 안 보이니 휴대폰에선 팝업으로도 알린다 (웹은 Alert가 안 떠서 위 안내만)
+      if (Platform.OS !== 'web') Alert.alert('수락할 수 없어요', errorMessage(error.message), [{ text: '확인' }]);
       await load();
       return;
     }
