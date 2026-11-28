@@ -1,5 +1,5 @@
 import { REQUIRED_SLOTS, type OrderKind, type OrderStatus, type PaymentMethod, type PhotoSlot, type Transmission } from '@takson/shared';
-import { toOrderInsert, validateOrderForm, type OrderForm, type Place } from './form';
+import { toOrderInsert, toWaypointRows, validateOrderForm, type OrderForm, type Place } from './form';
 import { STATUS_LABEL } from './labels';
 
 /** 필수 사진 칸 (서버 missing_photos와 같은 순서) */
@@ -30,6 +30,7 @@ const FIELD_LABEL: Record<string, string> = {
   dropoff_contact_name: '도착지 담당자', dropoff_contact_phone: '도착지 연락처',
   vehicle_number: '차량번호', vehicle_model: '차종', vehicle_color: '색상', transmission: '변속기',
   driver_memo: '기사 메모', payment_method: '결제 방식', distance_km: '거리',
+  capital_company_id: '캐피탈 회사', waypoints: '경유지', missions: '미션', seal_count: '인감 수',
 };
 
 const won = (n: unknown) => `${Number(n).toLocaleString('ko-KR')}원`;
@@ -94,30 +95,40 @@ function rowPlace(r: Row, p: 'pickup' | 'dropoff'): Place {
   };
 }
 
-/** 저장된 오더 행을 수정 폼으로. 경유지·미션은 상세 화면에서 따로 보여 준다 */
-export function rowToForm(r: Row): OrderForm {
+/** 저장된 오더 행(+경유지·미션)을 수정 폼으로 */
+export function rowToForm(r: Row, waypoints: Place[] = [], missionIds: string[] = []): OrderForm {
   return {
     companyId: str(r.company_id), kind: r.kind as OrderKind,
-    pickup: rowPlace(r, 'pickup'), dropoff: rowPlace(r, 'dropoff'), waypoints: [],
+    pickup: rowPlace(r, 'pickup'), dropoff: rowPlace(r, 'dropoff'), waypoints,
     vehicleNumber: str(r.vehicle_number), vehicleModel: str(r.vehicle_model), vehicleColor: str(r.vehicle_color),
-    transmission: (r.transmission as Transmission | null) ?? '', driverMemo: str(r.driver_memo), missionIds: [],
+    transmission: (r.transmission as Transmission | null) ?? '', driverMemo: str(r.driver_memo), missionIds,
     reservedAt: (r.reserved_at as string | null) ?? null, paymentMethod: r.payment_method as PaymentMethod,
     fare: num(r.fare), distanceKm: num(r.distance_km), staffOnly: r.dispatch_mode === 'staff_only',
     capitalCompanyId: (r.capital_company_id as string | null) ?? null,
   };
 }
 
-const sameTime = (a: string | null, b: string | null) =>
-  a === b || (a !== null && b !== null && new Date(a).getTime() === new Date(b).getTime());
-
-/** 수정 폼 검사. 예약 시간은 바꿨을 때만 '지났는지' 본다 */
-export function validateOrderEdit(f: OrderForm, originalReservedAt: string | null, now: Date): string | null {
-  return validateOrderForm(f, sameTime(f.reservedAt, originalReservedAt) ? new Date(0) : now);
+/** 관제 수정 폼 검사. 기록을 바로잡을 수 있게 지난 예약 시간도 허용한다 */
+export function validateOrderEdit(f: OrderForm): string | null {
+  return validateOrderForm(f, new Date(0));
 }
 
+/** 수정 폼: 오더 폼 + 서류탁송 인감 수 */
+export type EditForm = OrderForm & { sealCount?: number | null };
+
 /** 수정 저장 때 보낼 칸: 처음 불러온 값과 달라진 orders 컬럼만 */
-export function changedColumns(before: OrderForm, after: OrderForm): Record<string, unknown> {
-  const a = toOrderInsert(before);
-  const b = toOrderInsert(after);
-  return Object.fromEntries(Object.entries(b).filter(([k, v]) => JSON.stringify(v) !== JSON.stringify(a[k])));
+export function changedColumns(before: EditForm, after: EditForm): Record<string, unknown> {
+  const a = { ...toOrderInsert(before), seal_count: before.sealCount ?? null };
+  const b = { ...toOrderInsert(after), seal_count: after.sealCount ?? null };
+  return Object.fromEntries(Object.entries(b).filter(([k, v]) => JSON.stringify(v) !== JSON.stringify(a[k as keyof typeof a])));
+}
+
+/** 경유지·미션: 바뀐 것만 (안 바뀌면 null → 서버가 그대로 둔다) */
+export function changedExtras(before: OrderForm, after: OrderForm) {
+  const rows = (f: OrderForm) => toWaypointRows('', f.waypoints);
+  const ids = (f: OrderForm) => [...new Set(f.missionIds)].sort();
+  return {
+    waypoints: JSON.stringify(rows(before)) === JSON.stringify(rows(after)) ? null : rows(after),
+    missionIds: JSON.stringify(ids(before)) === JSON.stringify(ids(after)) ? null : after.missionIds,
+  };
 }

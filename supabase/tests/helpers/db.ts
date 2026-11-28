@@ -58,7 +58,7 @@ export type UserOpts = {
   loginId: string;
   role?: 'driver' | 'customer' | 'staff';
   companyId?: string;
-  staffLevel?: 'admin' | 'operator';
+  staffLevel?: 'admin' | 'operator' | 'accounting';
   driverStatus?: 'pending' | 'active' | 'suspended';
   name?: string;
   phone?: string;

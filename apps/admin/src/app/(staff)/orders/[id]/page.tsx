@@ -22,10 +22,11 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const { data: order } = await supabase.from('orders').select('*').eq('id', id).maybeSingle();
   if (!order) notFound();
 
-  const [companies, waypoints, missions, events, photos, receipts, missPickup, missDropoff, capitals, docs, examples, required] = await Promise.all([
+  const [companies, waypoints, missions, allMissions, events, photos, receipts, missPickup, missDropoff, capitals, docs, examples, required] = await Promise.all([
     supabase.from('companies').select('id, name').order('name'),
-    supabase.from('order_waypoints').select('seq, address, detail').eq('order_id', id).order('seq'),
-    supabase.from('order_missions').select('extra_fare, missions(name)').eq('order_id', id),
+    supabase.from('order_waypoints').select('seq, address, detail, area, lat, lng, contact_name, contact_phone').eq('order_id', id).order('seq'),
+    supabase.from('order_missions').select('mission_id, extra_fare, missions(name)').eq('order_id', id),
+    supabase.from('missions').select('id, name, extra_fare, active').order('created_at'),
     supabase.from('order_events').select('id, type, from_status, to_status, reason, data, actor_id, created_at')
       .eq('order_id', id).order('created_at'),
     supabase.from('order_photos').select('id, phase, slot, path, taken_at, rejected_reason, source').eq('order_id', id).order('created_at'),
@@ -73,18 +74,28 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const status = order.status as OrderStatus;
   const missing = { pickup: (missPickup.data ?? []) as string[], dropoff: (missDropoff.data ?? []) as string[] };
   const company = (companies.data ?? []).find(c => c.id === order.company_id);
-  const missionList = (missions.data ?? []) as unknown as { extra_fare: number; missions: { name: string } | null }[];
+  const missionList = (missions.data ?? []) as unknown as { mission_id: string; extra_fare: number; missions: { name: string } | null }[];
+  // 수정 폼: 경유지는 주소 칸 모양으로, 미션은 지금 쓰는 것 + 이미 붙은 것
+  const editWaypoints = (waypoints.data ?? []).map(w => ({
+    address: w.address ?? '', detail: w.detail ?? '', area: w.area, lat: w.lat, lng: w.lng,
+    contactName: w.contact_name ?? '', contactPhone: w.contact_phone ?? '',
+  }));
+  const attachedIds = missionList.map(m => m.mission_id);
+  const editMissions = (allMissions.data ?? []).filter(m => m.active || attachedIds.includes(m.id));
 
   return (
     <div className="mx-auto max-w-7xl">
     <div className="min-w-0 space-y-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <Link href="/orders" className="text-sm text-slate-500 hover:underline">← 관제판</Link>
+      {/* 스크롤해도 맨 위에 붙어 있는 줄: 목록으로, 저장(아래 '오더 내용 수정'을 저장) */}
+      <div className="sticky top-0 z-20 -mx-6 -mt-6 flex flex-wrap items-center gap-3 border-b bg-[#f0f1ee] px-6 py-2">
+        <Link href="/orders" className="rounded border bg-white px-3 py-1.5 text-sm font-semibold hover:bg-slate-50">← 목록</Link>
+        <button type="submit" form="order-edit" className="rounded bg-road px-4 py-1.5 text-sm font-semibold text-white">저장</button>
         <h1 className="text-xl font-bold">{order.order_no} · {company?.name ?? '?'} · {order.pickup_area ?? '?'} → {order.dropoff_area ?? '?'}</h1>
         <span className="rounded bg-ink px-2 py-0.5 text-sm text-white">{STATUS_LABEL[status]}</span>
         {order.kind === 'daeri' && <span className="rounded bg-purple-100 px-2 py-0.5 text-xs text-purple-700">대리</span>}
         {order.kind === 'docs' && <span className="rounded bg-orange-100 px-2 py-0.5 text-xs text-orange-800">{KIND_LABEL[order.kind as OrderKind]} · {capitalName ?? '?'}</span>}
         {order.dispatch_mode === 'staff_only' && <span className="rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-800">관제 배차 전용</span>}
+        <div id="order-save-note" className="ml-auto text-sm" />
       </div>
 
       {(waypoints.data?.length || missionList.length) ? (
@@ -106,8 +117,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       <PhotoGrid orderId={id} photos={signedPhotos} receipts={signedReceipts}
         rejectable={status === 'assigned' || status === 'arrived_pickup' ? 'pickup' : status === 'driving' ? 'dropoff' : null} />
       {order.kind === 'docs' && <DocReviewPanel orderId={id} capitalName={capitalName} sealCount={order.seal_count} docs={reviewDocs} />}
-      <OrderEditForm key={order.id} orderId={id} initial={rowToForm(order)} updatedAt={order.updated_at} companies={companies.data ?? []}
-        capitals={capitals.data ?? []} />
+      <OrderEditForm key={order.id} orderId={id} initial={{ ...rowToForm(order, editWaypoints, attachedIds), sealCount: order.seal_count }} updatedAt={order.updated_at} companies={companies.data ?? []}
+        capitals={capitals.data ?? []} missions={editMissions} />
       <EventTimeline events={timeline} />
     </div>
     </div>

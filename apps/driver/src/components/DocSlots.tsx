@@ -5,6 +5,8 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { DocInfo } from '@/lib/orders/useOrder';
 import { usePhotoQueue } from '@/lib/photos/PhotoQueueProvider';
 import { lostReasons } from '@/lib/photos/queue';
+import { photoTodo, stepsParam, type Step } from '@/lib/photos/steps';
+import { SLOTS } from './PhotoSlots';
 import { supabase } from '@/lib/supabase';
 import { BigButton, color, Notice } from '@/ui/kit';
 
@@ -19,8 +21,10 @@ export function docLabel(slot: string, examples: { id: string; title: string }[]
  * 서류탁송 서류 사진 카드: 칸마다 찍기 / 관제 확인 중 / ✓ 인정 / ✗ 불인정(이유), 인감 수량, 작성 예시 보기.
  * 칸 목록은 서버(required_doc_slots)와 같게: 등록증, 인감, 표지가 아닌 캐피탈 예시 순서.
  */
-export function DocSlots({ orderId, docs, sealCount, capitalId, reload }: {
+export function DocSlots({ orderId, docs, sealCount, capitalId, reload, pickupMissing = [], pickupRejected = {} }: {
   orderId: string; docs: DocInfo; sealCount: number | null; capitalId: string | null; reload: () => Promise<void>;
+  /** 출발 사진 빈 칸·불인정 칸: 서류를 다 찍고 이어서 찍는다 */
+  pickupMissing?: string[]; pickupRejected?: Record<string, string>;
 }) {
   const { items, lost } = usePhotoQueue();
   const lostDocs = lostReasons(lost, orderId, 'docs', docs.state.missing);
@@ -38,9 +42,15 @@ export function DocSlots({ orderId, docs, sealCount, capitalId, reload }: {
     if (docs.state.pending.includes(s)) return { key: 'pending' as const, text: '관제 확인 중' };
     return { key: 'ok' as const, text: '✓ 인정' };
   };
-  const shoot = (list: string[]) => router.push(
-    `/order/${orderId}/camera?phase=docs&slots=${list.join(',')}&labels=${encodeURIComponent(list.map(s => docLabel(s, docs.examples)).join('|'))}` as Href);
+  const shoot = (list: string[], then: string[] = []) => {
+    const steps: Step[] = [...list.map(slot => ({ phase: 'docs' as const, slot })), ...then.map(slot => ({ phase: 'pickup' as const, slot }))];
+    const names = steps.map(s => (s.phase === 'docs' ? docLabel(s.slot, docs.examples) : ''));
+    router.push(`/order/${orderId}/camera?phase=docs&slots=${stepsParam(steps)}&labels=${encodeURIComponent(names.join('|'))}` as Href);
+  };
   const todo = slots.filter(s => ['empty', 'rejected'].includes(state(s).key));
+  const pickupBad = { ...lostReasons(lost, orderId, 'pickup', pickupMissing), ...pickupRejected };
+  const pickupTodo = photoTodo(SLOTS, pickupMissing,
+    s => items.some(i => i.orderId === orderId && i.phase === 'pickup' && i.slot === s), pickupBad);
 
   async function saveCount() {
     const n = Number(count);
@@ -70,7 +80,9 @@ export function DocSlots({ orderId, docs, sealCount, capitalId, reload }: {
           );
         })}
       </View>
-      {todo.length > 0 && <BigButton label={`서류 ${todo.length}장 이어서 찍기`} onPress={() => shoot(todo)} />}
+      {todo.length > 0 && (pickupTodo.length > 0
+        ? <BigButton label={`남은 사진 모두 찍기 (서류 ${todo.length}장 + 출발 ${pickupTodo.length}장)`} onPress={() => shoot(todo, pickupTodo)} />
+        : <BigButton label={`서류 ${todo.length}장 이어서 찍기`} onPress={() => shoot(todo)} />)}
       <View style={s.row}>
         <Text style={s.label}>인감 수량</Text>
         <TextInput value={count} onChangeText={setCount} keyboardType="number-pad" accessibilityLabel="인감 수량"

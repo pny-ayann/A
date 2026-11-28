@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { usePhotoQueue } from '@/lib/photos/PhotoQueueProvider';
 import { lostReasons, type Slot } from '@/lib/photos/queue';
 import { photoSlotState } from '@/lib/photos/slotState';
+import { photoTodo } from '@/lib/photos/steps';
 import { BigButton, color } from '@/ui/kit';
 
 export const SLOTS: Slot[] = ['front', 'back', 'left', 'right', 'dashboard', 'key'];
@@ -22,7 +23,7 @@ export function PhotoSlots({ orderId, phase, missing, rejected = {} }: {
   // 휴대폰에서 파일을 잃은 칸도 빨간 칸(다시 찍기)으로
   const bad = { ...lostReasons(lost, orderId, phase, missing), ...rejected };
   const state = (s: Slot) => photoSlotState(s, missing, queued(s), bad);
-  const todo = SLOTS.filter(s => ['empty', 'rejected'].includes(state(s).key));
+  const todo = photoTodo(SLOTS, missing, s => queued(s as Slot), bad) as Slot[];
   const pendingAll = items.filter(i => i.orderId === orderId).length;
 
   const shoot = (slots: Slot[]) =>

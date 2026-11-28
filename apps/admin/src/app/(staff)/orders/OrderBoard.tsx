@@ -25,10 +25,10 @@ export function OrderBoard({ initialOrders, companies, drivers, alertMin, initia
   const [locations, setLocations] = useState(() => new Map(initialLocations.map(l => [l.driver_id, l])));
   const [live, setLive] = useState<'connecting' | 'on' | 'off'>('connecting');
   const [tab, setTab] = useState<OrderStatus | 'all'>('all');
-  const [companyId, setCompanyId] = useState('');
-  const [driverId, setDriverId] = useState('');
   const [date, setDate] = useState('');
   const [reservedOnly, setReservedOnly] = useState(false);
+  const [payments, setPayments] = useState<OrderRow['payment_method'][]>([]);
+  const [q, setQ] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [now, setNow] = useState<Date | null>(null);
   // 관제 확인을 기다리는 서류가 있는 오더 (기사님이 출발을 못 하고 기다림)
@@ -84,7 +84,8 @@ export function OrderBoard({ initialOrders, companies, drivers, alertMin, initia
     return (id: string | null) => (id ? m.get(id) ?? '?' : '');
   }, [drivers]);
 
-  const base = filterOrders(orders, { companyId, driverId, date, reservedOnly });
+  const nameOf = (o: OrderRow) => `${companyName(o.company_id)} ${driverName(o.driver_id)}`;
+  const base = filterOrders(orders, { date, reservedOnly, payments, q, nameOf });
   const shown = tab === 'all' ? base : base.filter(o => o.status === tab);
   const lateCount = now ? base.filter(o => isUnassignedOverdue(o, now, alertMin)).length : 0;
   const selected = orders.find(o => o.id === selectedId) ?? null;
@@ -129,22 +130,26 @@ export function OrderBoard({ initialOrders, companies, drivers, alertMin, initia
           })}
         </div>
 
-        <div className="mb-3 flex flex-wrap items-center gap-2 text-sm">
-          <select aria-label="업체 필터" value={companyId} onChange={e => setCompanyId(e.target.value)} className={input}>
-            <option value="">모든 업체</option>
-            {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-          <select aria-label="기사 필터" value={driverId} onChange={e => setDriverId(e.target.value)} className={input}>
-            <option value="">모든 기사</option>
-            {drivers.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-          </select>
-          <input type="date" aria-label="날짜 필터" value={date} onChange={e => setDate(e.target.value)} className={input} />
+        <div className="mb-2 flex flex-wrap items-center gap-2 text-sm">
+          <input type="date" aria-label="날짜 (접수일·예약일)" title="접수일이나 예약일이 이 날인 오더" value={date}
+            onChange={e => setDate(e.target.value)} className={input} />
+          <input type="search" aria-label="오더 검색" value={q} onChange={e => setQ(e.target.value)}
+            placeholder="검색: 번호·업체·주소·차량번호·기사" className={`${input} w-72`} />
+        </div>
+        <div className="mb-3 flex flex-wrap items-center gap-3 text-sm">
           <label className="flex items-center gap-1">
             <input type="checkbox" checked={reservedOnly} onChange={e => setReservedOnly(e.target.checked)} /> 예약만
           </label>
-          {(companyId || driverId || date || reservedOnly) && (
+          {(['cash', 'postpaid'] as const).map(p => (
+            <label key={p} className="flex items-center gap-1">
+              <input type="checkbox" checked={payments.includes(p)}
+                onChange={e => setPayments(cur => (e.target.checked ? [...cur, p] : cur.filter(x => x !== p)))} />
+              {p === 'cash' ? '현금' : '후불'}
+            </label>
+          ))}
+          {(q || date || reservedOnly || payments.length > 0) && (
             <button type="button" className="text-slate-500 underline"
-              onClick={() => { setCompanyId(''); setDriverId(''); setDate(''); setReservedOnly(false); }}>필터 지우기</button>
+              onClick={() => { setQ(''); setDate(''); setReservedOnly(false); setPayments([]); }}>필터 지우기</button>
           )}
         </div>
 

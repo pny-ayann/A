@@ -1,5 +1,6 @@
 import { AccountFields, ActionForm, inputCls } from '@/components/ActionForm';
 import { issueAccount, saveCompany } from '@/lib/accounts/actions';
+import { canSettle } from '@/lib/auth/gate';
 import { getStaffProfile, serverClient } from '@/lib/supabase/server';
 
 type Company = { id: string; name: string; phone: string | null; default_payment: string; fuel_billing: string; fuel_payer_cash: string; fuel_payer_postpaid: string };
@@ -35,7 +36,7 @@ const FUEL_LABEL: Record<string, string> = { customer: '주유비 고객 청구'
 
 /** 관리자는 고치고 발급한다. 일반 관제는 보기만 한다 (설계 8.5) */
 export default async function CompaniesPage() {
-  const isAdmin = (await getStaffProfile())?.staff_level === 'admin';
+  const isAdmin = canSettle((await getStaffProfile())?.staff_level); // 관리자·정산은 고치기까지
   const supabase = await serverClient();
   const [companies, staff] = await Promise.all([
     supabase.from('companies').select('id, name, phone, default_payment, fuel_billing, fuel_payer_cash, fuel_payer_postpaid').order('name'),

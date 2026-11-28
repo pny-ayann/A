@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { inputCls } from '@/components/ActionForm';
 import { parseMonth } from '@/lib/billing/month';
 import { won } from '@/lib/wallet/format';
+import { canSettle } from '@/lib/auth/gate';
 import { getStaffProfile, serverClient } from '@/lib/supabase/server';
 import { PaidCheckbox } from './PaidCheckbox';
 import { PayStatus } from './PayStatus';
@@ -19,7 +20,7 @@ const label = (m: string) => `${m.slice(0, 4)}년 ${Number(m.slice(5, 7))}월`;
 /** 업체 정산 (관리자): 달을 고르면 업체별 청구금액과 입금 체크, 아래에 미수금 */
 export default async function BillingPage({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
   const me = await getStaffProfile();
-  if (me?.staff_level !== 'admin') redirect('/orders');
+  if (!canSettle(me?.staff_level)) redirect('/orders');
   const month = parseMonth((await searchParams).month, new Date());
   const supabase = await serverClient();
   const [sum, dues] = await Promise.all([

@@ -1,14 +1,15 @@
 'use server';
 import { revalidatePath } from 'next/cache';
-import { NOT_ADMIN, SAVE_FAILED, requireAdmin, type ActionResult } from '@/lib/admin/guard';
+import { NOT_ADMIN, SAVE_FAILED, requireAdmin, requireSettle, type ActionResult } from '@/lib/admin/guard';
 import { adminClient } from '@/lib/supabase/admin';
 import { createAccount, type NewAccount } from './create';
 
 const text = (form: FormData, k: string) => String(form.get(k) ?? '').trim();
+const isStaffLevel = (l: string): l is 'admin' | 'operator' | 'accounting' => l === 'admin' || l === 'operator' || l === 'accounting';
 
-/** 계정 발급 (업체 직원·기사·관제 직원 공통). 관리자 확인 뒤에만 서비스 키를 쓴다. */
+/** 계정 발급 (업체 직원·기사·관제 직원 공통). 관리자·정산 확인 뒤에만 서비스 키를 쓴다. 관제 직원 계정은 관리자만. */
 export async function issueAccount(_prev: ActionResult, form: FormData): Promise<ActionResult> {
-  const ctx = await requireAdmin();
+  const ctx = await requireSettle();
   if (!ctx) return NOT_ADMIN;
   const common = {
     loginId: text(form, 'loginId'),
@@ -26,8 +27,9 @@ export async function issueAccount(_prev: ActionResult, form: FormData): Promise
   } else if (role === 'driver') {
     account = { ...common, role };
   } else if (role === 'staff') {
+    if (ctx.me.staff_level !== 'admin') return NOT_ADMIN;
     const level = text(form, 'staffLevel');
-    if (level !== 'admin' && level !== 'operator') return { ok: false, message: '등급을 골라 주세요.' };
+    if (!isStaffLevel(level)) return { ok: false, message: '등급을 골라 주세요.' };
     account = { ...common, role, staffLevel: level };
   } else {
     return { ok: false, message: '계정 종류가 잘못됐어요.' };
@@ -40,7 +42,7 @@ export async function issueAccount(_prev: ActionResult, form: FormData): Promise
 }
 
 export async function saveCompany(_prev: ActionResult, form: FormData): Promise<ActionResult> {
-  const ctx = await requireAdmin();
+  const ctx = await requireSettle();
   if (!ctx) return NOT_ADMIN;
   const id = text(form, 'id');
   const row = {
@@ -66,7 +68,7 @@ export async function saveCompany(_prev: ActionResult, form: FormData): Promise<
 }
 
 export async function setDriverStatus(_prev: ActionResult, form: FormData): Promise<ActionResult> {
-  const ctx = await requireAdmin();
+  const ctx = await requireSettle();
   if (!ctx) return NOT_ADMIN;
   const status = text(form, 'status');
   if (!['pending', 'active', 'suspended'].includes(status)) return { ok: false, message: '상태가 잘못됐어요.' };
@@ -78,7 +80,7 @@ export async function setDriverStatus(_prev: ActionResult, form: FormData): Prom
 }
 
 export async function setCommission(_prev: ActionResult, form: FormData): Promise<ActionResult> {
-  const ctx = await requireAdmin();
+  const ctx = await requireSettle();
   if (!ctx) return NOT_ADMIN;
   const raw = text(form, 'rate');
   const rate = raw === '' ? Number.NaN : Number(raw);
@@ -96,7 +98,7 @@ export async function setStaffLevel(_prev: ActionResult, form: FormData): Promis
   if (!ctx) return NOT_ADMIN;
   const id = text(form, 'id');
   const level = text(form, 'staffLevel');
-  if (level !== 'admin' && level !== 'operator') return { ok: false, message: '등급을 골라 주세요.' };
+  if (!isStaffLevel(level)) return { ok: false, message: '등급을 골라 주세요.' };
   if (id === ctx.me.id) return { ok: false, message: '자기 등급은 바꿀 수 없어요. 다른 관리자에게 부탁해 주세요.' };
   const r = await ctx.supabase.from('profiles').update({ staff_level: level })
     .eq('id', id).eq('role', 'staff').select('id');
