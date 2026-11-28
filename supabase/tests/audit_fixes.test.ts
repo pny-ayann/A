@@ -50,11 +50,11 @@ describe('주유 영수증', () => {
   });
 });
 
-test('기사가 오더를 놓으면 그 기사가 찍은 출발 사진과 서류가 지워진다', async () => {
+test('관제가 회수하면 앞 기사가 찍은 출발 사진과 서류가 지워진다', async () => {
   const o = await seedOrder(w.db, w.A, { status: 'arrived_pickup', driver_id: w.d, assigned_at: new Date().toISOString() });
   await seedPhotos(w.db, o, 'pickup');
   await seedDocs(w.db, o, ['registration']);
-  await as(w.db, w.d, tx => tx.query(`select release_order($1, '사정이 생겨서')`, [o]));
+  await as(w.db, w.op, tx => tx.query(`select staff_unassign($1, '연락 안 됨')`, [o]));
   expect(await count('select count(*)::int as n from order_photos where order_id = $1', [o])).toBe(0);
   expect(await count('select count(*)::int as n from order_documents where order_id = $1', [o])).toBe(0);
 });
